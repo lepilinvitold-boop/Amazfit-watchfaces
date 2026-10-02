@@ -1,0 +1,69 @@
+name: Package lime watchface
+on:
+  push:
+    paths:
+      - 'source/SDDC639Ru-Lime.zip'
+      - '.github/workflows/package-lime.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Package and create QR
+        run: |
+          pip install 'qrcode[pil]'
+          curl --fail -L https://raw.githubusercontent.com/SashaCX75/CreateZPK_2/22211f12b0c58d25ad4b65f919016ec94f9664a5/Resources/WatchFace.zpk -o /tmp/template.zpk
+          python - <<'PY'
+          import zipfile,json,pathlib,qrcode,io,time
+          out=pathlib.Path('dist')
+          out.mkdir(exist_ok=True)
+          with zipfile.ZipFile('/tmp/template.zpk') as src, zipfile.ZipFile(out/'SDDC639Ru-Balance2-Lime.zpk','w',zipfile.ZIP_DEFLATED) as dst:
+              for name in src.namelist():
+                  data=src.read(name)
+                  if name=='app-side.zip':
+                      side=zipfile.ZipFile(io.BytesIO(data))
+                      obj=json.loads(side.read('app.json'))
+                      device=json.loads(zipfile.ZipFile('source/SDDC639Ru-Lime.zip').read('app.json'))
+                      obj['app'].update(device['app'])
+                      obj['platforms']=device['device']['platforms']
+                      obj['module']['watchface']=device['module']['watchface']
+                      obj['i18n']={'en-US':{'icon':'0001.png','appName':'SDDC639Ru Lime'}}
+                      obj['packageInfo']['mode']='production'
+                      obj['packageInfo']['timeStamp']=int(time.time())
+                      buf=io.BytesIO()
+                      with zipfile.ZipFile(buf,'w',zipfile.ZIP_DEFLATED) as packed:
+                          packed.writestr('app.json',json.dumps(obj,separators=(',',':')))
+                      data=buf.getvalue()
+                  if name.endswith('.json'):
+                      obj=json.loads(data)
+                      print(name,json.dumps(obj))
+                      if isinstance(obj.get('packageInfo'),dict):
+                          obj['packageInfo']['mode']='production'
+                      data=json.dumps(obj,separators=(',',':')).encode()
+                  dst.writestr(name,data)
+              dst.write('source/SDDC639Ru-Lime.zip','device.zip')
+          url='https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-Lime.zpk'
+          qrcode.make(url.replace('https://','zpkd1://',1)).save(out/'install-qr-Lime.png')
+          (out/'download-url-Lime.txt').write_text(url+'\n')
+          with zipfile.ZipFile(out/'SDDC639Ru-Balance2-Lime.zpk') as z:
+              assert z.testzip() is None
+              assert 'device.zip' in z.namelist()
+          PY
+      - name: Publish files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist
+          git diff --cached --quiet || git commit -m "Publish Balance 2 watchface package and QR"
+          git pull --rebase origin main
+          git push
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Balance2-Lime-watchface
+          path: dist/
