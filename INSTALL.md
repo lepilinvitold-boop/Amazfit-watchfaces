@@ -1,14 +1,14 @@
-# SDDC639Ru — Amazfit Balance 2
+# Циферблаты для Amazfit Balance 2
 
-Silver hour and minute hands, red second hand. Screen: 480 × 480.
+Оставлены два готовых варианта с серебристыми стрелками и улучшенным безелем.
 
-![Installation QR](dist/install-qr.png)
+| Вариант | Установка через Zepp | Скачать |
+| --- | --- | --- |
+| Красная секундная стрелка, версия 1.6 | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/install-qr-v1.6.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-v1.6.zpk) |
+| Жёлто-зелёная секундная стрелка, Lime | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/install-qr-Lime.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-Lime.zpk) |
 
-[Download ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2.zpk)
+Откройте QR на планшете и отсканируйте его встроенным сканером Zepp в режиме разработчика на телефоне, подключённом к часам.
 
-## Установка
-Откройте QR на планшете. В Zepp на телефоне, к которому подключены часы, включите режим разработчика и отсканируйте QR встроенным сканером Zepp.
+Оба варианта установлены и визуально проверены пользователем. Полная проверка всех функций не проводилась.
 
-Пакет и ZIP проверяются на целостность. Установка и работа стрелок на физических часах ещё не проверены. При ошибке пришлите точный текст или скриншот.
-
-Сборка использует структуру шаблона CreateZPK_2: https://github.com/SashaCX75/CreateZPK_2 (MIT).
+Исходные пакеты находятся в source/. Старые варианты удалены из текущего дерева; история Git сохранена.
