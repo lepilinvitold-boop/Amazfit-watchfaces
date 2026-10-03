@@ -23,7 +23,7 @@ jobs:
           import zipfile,json,pathlib,qrcode,io,time
           out=pathlib.Path('dist')
           out.mkdir(exist_ok=True)
-          with zipfile.ZipFile('/tmp/template.zpk') as src, zipfile.ZipFile(out/'SDDC639Ru-Balance2-v2.2.zpk','w',zipfile.ZIP_DEFLATED) as dst:
+          with zipfile.ZipFile('/tmp/template.zpk') as src, zipfile.ZipFile(out/'SDDC639Ru-Balance2-v2.3.zpk','w',zipfile.ZIP_DEFLATED) as dst:
               for name in src.namelist():
                   data=src.read(name)
                   if name=='app-side.zip':
@@ -48,10 +48,10 @@ jobs:
                       data=json.dumps(obj,separators=(',',':')).encode()
                   dst.writestr(name,data)
               dst.write('source/SDDC639Ru-1.zip','device.zip')
-          url='https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-v2.2.zpk'
-          qrcode.make(url.replace('https://','zpkd1://',1)).save(out/'install-qr-v2.2.png')
+          url='https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-v2.3.zpk'
+          qrcode.make(url.replace('https://','zpkd1://',1)).save(out/'install-qr-v2.3.png')
           (out/'download-url.txt').write_text(url+'\n')
-          with zipfile.ZipFile(out/'SDDC639Ru-Balance2-v2.2.zpk') as z:
+          with zipfile.ZipFile(out/'SDDC639Ru-Balance2-v2.3.zpk') as z:
               assert z.testzip() is None
               assert 'device.zip' in z.namelist()
           PY
