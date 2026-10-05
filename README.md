@@ -1,9 +1,10 @@
 # Циферблаты для Amazfit Balance 2
 
-Версия 2.6 сохранена как основа всех модификаций. Доступны три варианта с серебристыми стрелками.
+Версия 2.6 сохранена как основа всех модификаций. Доступны четыре варианта с серебристыми стрелками.
 
 | Вариант | Установка через Zepp | Скачать |
 | --- | --- | --- |
+| Временная версия 2.7.1: более узкий безель и светлые мелкие деления | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/install-qr-v2.7.1.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-v2.7.1.zpk) |
 | Lime секундная стрелка и объёмный двухчастный безель, версия 2.7 | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/install-qr-v2.7.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-v2.7.zpk) |
 | Красная секундная стрелка, исправленная версия 2.6 | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/install-qr-v2.6-fixed.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-v2.6-fixed.zpk) |
 | Жёлто-зелёная секундная стрелка, Lime | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/install-qr-Lime.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/SDDC639Ru-Balance2-Lime.zpk) |
