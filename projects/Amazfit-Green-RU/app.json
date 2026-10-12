@@ -5,15 +5,15 @@
     "appName": "Amazfit Green RU",
     "appType": "watchface",
     "version": {
-      "code": 1,
-      "name": "1.0.0"
+      "code": 2,
+      "name": "1.0.1"
     },
     "icon": "preview.png",
     "cover": [
       "preview.png"
     ],
     "vender": "Vitold personal",
-    "description": "Русский аналогово-цифровой циферблат"
+    "description": "Русский циферблат по исходному образцу"
   },
   "runtime": {
     "apiVersion": {
@@ -55,5 +55,9 @@
   "watchfacePreview": {
     "icon": "preview.png",
     "size": []
+  },
+  "packageInfo": {
+    "mode": "production",
+    "zpm": "3.4.2"
   }
 }
