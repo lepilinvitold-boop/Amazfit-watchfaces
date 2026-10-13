@@ -5,8 +5,6 @@
 | Версия | Установка | Скачать |
 | --- | --- | --- |
 | Amazfit Green RU 1.0.3: надписи по дуге, блокировка тапов, исправленные шрифты и стрелки | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.3-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.3-Balance2.zpk) |
-| Amazfit Green RU 1.0.2: объёмный безель, углублённая панель, новые подписи, стрелки и цветная погода | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.2-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.2-Balance2.zpk) |
-| Amazfit Green RU 1.0.1: исправленный запуск и новый рисунок по образцу | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.1-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.1-Balance2.zpk) |
 | Owl Steel 0.94.7.1: внутренний ободок и панель даты, полный АОД | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7.1-install-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7.1-RU-Balance2.zpk) |
 | Owl Steel 0.94.7: полный приглушённый АОД, без секунд в АОД | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7-install-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7-RU-Balance2.zpk) |
 | Owl Steel 0.94.6: объёмный безель и зазоры вокруг панелей | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.6-install-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.6-RU-Balance2.zpk) |
@@ -17,4 +15,4 @@
 
 Для полного АОД в настройках часов выберите стиль AOD «Как у текущего циферблата». Обычный экран 0.94.7 сохранён из 0.94.6. Проверены пакет, ресурсы и запуск в программной модели; окончательная проверка отображения выполняется на часах.
 
-Новый проект: [Amazfit Green RU](projects/Amazfit-Green-RU). Версия 1.0.0 имела ошибку запуска; используйте 1.0.1.
+Сохранённый проект: [Amazfit Green RU 1.0.3](projects/Amazfit-Green-RU). Предыдущие версии Amazfit Green удалены из текущей ветки.
