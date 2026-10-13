@@ -2,9 +2,10 @@
 from pathlib import Path
 import io,json,math,struct,zipfile,shutil
 import numpy as np
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image,ImageDraw,ImageFont,ImageFilter
+from scipy.ndimage import distance_transform_edt
 from reportlab.graphics.barcode.qr import QrCodeWidget
-P=Path(__file__).resolve().parent;A=P/'assets';D=P.parents[1]/'dist';V='1.0.1';B='Amazfit-Green-RU-v'+V
+P=Path(__file__).resolve().parent;A=P/'assets';D=P.parents[1]/'dist';V='1.0.2';B='Amazfit-Green-RU-v'+V
 if A.exists():shutil.rmtree(A)
 A.mkdir();D.mkdir(exist_ok=True)
 SOURCE={};S=4;GREEN=(16,188,61,255);WHITE=(235,236,237,255)
@@ -24,51 +25,53 @@ class Draw:
  def text(self,t,x,y,size,c=WHITE,angle=0,kind=F,shadow=False):
   f=font(size,kind);box=f.getbbox(t);layer=Image.new('RGBA',(box[2]-box[0]+8*S,box[3]-box[1]+8*S));dr=ImageDraw.Draw(layer)
   if shadow:dr.text((4*S-box[0]+S,4*S-box[1]+S),t,font=f,fill=(0,0,0,240),stroke_width=S,stroke_fill=(0,0,0,240))
-  dr.text((4*S-box[0],4*S-box[1]),t,font=f,fill=c)
+  dr.text((4*S-box[0],4*S-box[1]),t,font=f,fill=c,stroke_width=round(.45*S) if shadow else 0,stroke_fill=c)
   if angle:layer=layer.rotate(-angle,resample=Image.Resampling.BICUBIC,expand=True)
   self.im.alpha_composite(layer,(round(x*S-layer.width/2),round(y*S-layer.height/2)))
 def polar(r,a,cx=240,cy=240):a=math.radians(a);return cx+r*math.sin(a),cy-r*math.cos(a)
-# The photograph's physical black/silver case bezel is deliberately outside this screen.
-bg=image(480,480);d=Draw(bg)
-y,x=np.mgrid[:480*S,:480*S];r=np.hypot(x/S-240,y/S-240);light=-(x/S+y/S-480)/(max(1,480)*1.41)
+# One-piece circular metal chapter ring with outer chamfer and inner vertical wall.
+bg=image(480,480)
+y,x=np.mgrid[:480*S,:480*S];xx=x/S-240;yy=y/S-240;r=np.hypot(xx,yy)
+light=np.divide(-xx-yy,np.maximum(r,1)*math.sqrt(2));angular=.5+.5*light
+shade=np.clip(39+4*light,0,255)
+# Metal face, outer lip, steep inner wall, then recessed dial surface.
+shade=np.where((r>=210)&(r<233),52+22*angular,shade)
+shade=np.where((r>=233)&(r<237),68+83*angular+15*np.sin((r-233)/4*math.pi),shade)
+shade=np.where((r>=237)&(r<239),20+46*angular,shade)
+shade=np.where(r>=239,8,shade)
+shade=np.where((r>=202)&(r<210),12+34*(r-202)/8+27*(1-angular),shade)
+shade=np.where((r>=200)&(r<202),10+14*(1-angular),shade)
+shade+=np.where((r>=210)&(r<233),.6*np.sin(r*3),0)
 a=np.zeros((480*S,480*S,4),np.uint8);a[:,:,3]=255
-metal=np.clip(58+12*light,0,255).astype('uint8');face=np.clip(39+5*light,0,255).astype('uint8')
-for c in range(3):a[:,:,c]=np.where(r<208,face,np.where(r<237,metal,13))
+for c in range(3):a[:,:,c]=np.clip(shade,0,255).astype('uint8')
 bg=Image.fromarray(a);d=Draw(bg)
-for radius,c,w in [(237,'#181818',1),(235,'#686868',.7),(210,'#171717',2),(205,'#707070',.7),(196,'#141414',1),(188,'#454545',1)]:d.ellipse((240-radius,240-radius,240+radius,240+radius),None,c,w)
-# Ring labels follow exactly the tangential orientation of the reference (including bottom).
+for radius,c,w in [(237.5,'#505357',.45),(232.7,'#242729',.5),(210.3,'#a0a1a2',.5),(201.7,'#0b0b0c',.75),(199.7,'#68696a',.45),(188,'#454545',.6)]:d.ellipse((240-radius,240-radius,240+radius,240+radius),None,c,w)
+# Minute numerals: wider upright type, tangent orientation exactly as on the reference.
 for i in range(12):
- angle=i*30;tx,ty=polar(222,angle);d.text('60' if i==0 else f'{5*i:02}',tx,ty,26,angle=angle,kind=REG)
-# Three thick green comb-shaped arcs at 12-3, with four inward teeth each.
+ angle=i*30;tx,ty=polar(221.5,angle);d.text('60' if i==0 else f'{5*i:02}',tx,ty,24,angle=angle,kind='/usr/share/fonts/opentype/urw-base35/NimbusSans-Regular.otf')
+# Original three green comb-shaped arcs are preserved in the free right-hand sectors.
 for start,end in [(6,25),(36,55),(66,85)]:
- for i in np.linspace(start,end,100):d.line([polar(230,i),polar(224,i)],GREEN,1.1)
- for i in [start,start+6,start+12,end]:d.line([polar(230,i),polar(217,i)],GREEN,2.5)
-# Chrome screw heads between the labels on the remaining ring.
-for angle in [105,135,165,195,225,255,285,315,345]:
- sx,sy=polar(222,angle);d.ellipse((sx-7,sy-7,sx+7,sy+7),'#303030','#535353',.7)
- d.ellipse((sx-5.3,sy-5.3,sx+5.3,sy+5.3),'#737373','#454545',.5)
- d.arc((sx-4.2,sy-4.2,sx+4.2,sy+4.2),200,310,'#acacac',1.2)
- d.line([(sx-2.8,sy-2.2),(sx+2.8,sy+2.2)],'#3f3f3f',1.8)
-# Small light dots adjacent to outer green legends, as in the photo.
-for angle in [128,145,215,232,305,323]:
- sx,sy=polar(222,angle);d.ellipse((sx-3.3,sy-3.3,sx+3.3,sy+3.3),'#adadad','#737373',.5)
-for label,angle in [('МУЗЫКА',314),('ШАГИ',224),('СЕКУНДОМЕР',136)]:
- sx,sy=polar(222,angle);d.text(label,sx,sy,16 if label!='СЕКУНДОМЕР' else 12,GREEN,angle=angle if angle<180 else angle-360)
+ for i in np.linspace(start,end,100):d.line([polar(231,i),polar(225,i)],GREEN,1.1)
+ for i in [start,start+6,start+12,end]:d.line([polar(231,i),polar(219,i)],GREEN,2.4)
+# No screw heads or decorative dots. Nine exact requested midpoint labels.
+outer_labels=[('ПУЛЬС',345),('ШАГИ',315),('ДИСТАНЦИЯ',285),('СТРЕСС',255),('БУДИЛЬНИК',225),('СЕКУНДОМЕР',195),('ТАЙМЕР',165),('ТРЕНИРОВКА',135),('КАЛОРИИ',105)]
+for label,angle in outer_labels:
+ sx,sy=polar(221.5,angle);rotation=angle-180 if 90<angle<270 else angle if angle<=180 else angle-360
+ d.text(label,sx,sy,13.5,GREEN,angle=rotation,kind='/usr/share/fonts/opentype/urw-base35/NimbusSansNarrow-Bold.otf')
 # 240 subdivisions with longer fifth and quarter marks.
 for i in range(240):
  ang=i*1.5;outer=201;inner=194 if i%4 else 190
  if i%20==0:inner=188
  d.line([polar(inner,ang),polar(outer,ang)],'#727272' if i%4 else '#969696',.7 if i%4 else 1.1)
-# Thin sector separators and tiny sector legends inside the chapter ring.
-for a in [0,30,60,90,270,300,330]:d.line([polar(169,a),polar(186,a)],'#666666',.8)
-for t,a in [('ЦИФЕРБЛАТ',-15),('Amazfit',15),('АНАЛОГ',45),('ЭКРАН',75),('ЭКРАН',-75),('ХРОНОГРАФ',-45)]:
- if t=='Amazfit':continue
- tx,ty=polar(178,a);d.text(t,tx,ty,8.5,(154,155,155,255),angle=a,kind=BOLD)
+# Sector contours remain; the removed words ANALOG/SCREEN never enter any raster resource.
+for a in [0,30,60,90,270,300,330]:d.line([polar(169,a),polar(186,a)],'#5c5d5e',.7)
+for t,angle in [('ПЛЕЕР',285),('БАТАРЕЯ',315),('ТЕЛЕФОН',345)]:
+ tx,ty=polar(178,angle);d.text(t,tx,ty,9.5,(172,174,176,255),angle=angle-360,kind=BOLD)
 # Raised white hour blocks, with no marks hidden under the lower panel.
 for ang in [0,30,60,270,300,330]:
  p=[polar(171,ang-2.1),polar(185,ang-2.1),polar(185,ang+2.1),polar(171,ang+2.1)];d.poly(p,'#bababa');d.line([p[0],p[1],p[2]],'#f1f1f1',1.4)
 # Flat, upright baseline with original oblique tall hour glyphs; not rotated around dial.
-for number,xx,yy,size in [('12',240,100,60),('1',310,120,61),('2',370,178,61),('9',86,242,61),('10',117,179,61),('11',169,121,61)]:d.text(number,xx,yy,size,shadow=True)
+for number,xx,yy,size in [('12',240,98,60),('1',310,120,62),('2',371,175,62),('9',86,240,62),('10',113,176,62),('11',167,120,62)]:d.text(number,xx,yy,size,shadow=True)
 # Lightning status icon above 12.
 d.poly([(239,34),(232,47),(237,47),(233,58),(247,43),(242,43),(247,34)],WHITE)
 # Original subtle crosshairs and four green squares retained; MEN text removed.
@@ -79,19 +82,61 @@ d.text('Amazfit',240,134,17,kind=BOLD)
 # Recessed lower digital panel: traced coordinates, continuous rounded shoulder.
 def cubic(p0,p1,p2,p3):
  return [tuple((1-t)**3*p0[j]+3*(1-t)**2*t*p1[j]+3*(1-t)*t*t*p2[j]+t**3*p3[j] for j in [0,1]) for t in np.linspace(0,1,40)]
-panel_unused=[(70,308),(101,327),(188,313),(213,304),(226,290),(237,275),(251,259),(268,239),(287,218),(301,211),(328,210),(338,204),(341,204),(341,212),(364,212),(368,204),(372,204),(372,212),(411,212),(422,229),(427,247),(424,273),(414,301),(398,328),(379,352),(356,373),(326,390),(289,399),(204,400),(158,391),(121,369),(93,339)]
-panel=[(62,299)]+cubic((62,299),(111,337),(178,325),(212,286))+[(275,225)]+cubic((275,225),(289,210),(291,207),(316,207))+[(338,207),(338,199),(342,199),(342,208),(369,208),(369,199),(373,199),(373,208),(411,208)]+cubic((411,208),(438,233),(432,263),(416,296))+cubic((416,296),(389,349),(334,397),(286,400))+[(158,400)]+cubic((158,400),(112,384),(78,340),(62,299))
-d.poly(panel,'#444444');panel2=[(x+(240-x)*.014,y+(280-y)*.014) for x,y in panel];d.poly(panel2,'#0a0a0a');panel3=[(x+(240-x)*.025,y+(280-y)*.025) for x,y in panel];d.poly(panel3,'black')
+# Smooth reference silhouette: a horizontal upper-left ledge, diagonal shoulder, round right wall.
+panel=[(68,294),(179,294)]+cubic((179,294),(198,294),(209,288),(222,273))+[(276,218)]+cubic((276,218),(285,208),(293,205),(311,205))+[(402,205)]+cubic((402,205),(421,205),(429,225),(429,246))+cubic((429,246),(426,281),(403,325),(373,354))+cubic((373,354),(348,379),(323,397),(289,400))+[(157,400)]+cubic((157,400),(116,383),(85,341),(68,294))
+mask=image(480,480);Draw(mask).poly(panel,'white');inside=np.array(mask)[:,:,3]>0
+signed=distance_transform_edt(inside)/S
+# Border normal supplies directional edge lighting. The dark wall is seven pixels deep.
+gy,gx=np.gradient(signed);norm=np.maximum(np.hypot(gx,gy),1e-5);normal_light=np.clip((-gx-gy)/(norm*math.sqrt(2)),-1,1)
+wall=12+19*np.clip(1-(signed-2)/5,0,1)+14*np.maximum(0,normal_light)
+rim=38+36*np.maximum(0,normal_light)
+value=np.where(signed<1.3,rim,np.where(signed<7,wall,0))
+arr=np.array(bg)
+for c in range(3):arr[:,:,c][inside]=np.clip(value[inside],0,255).astype('uint8')
+bg=Image.fromarray(arr);d=Draw(bg)
 d.line([(280,285),(407,285)],'#c4c4c4',1.1)
 # Eye-like indicator and outlined battery match the two original status symbols.
 d.arc((315,232,335,244),180,360,WHITE,1.4);d.arc((315,232,335,244),0,180,WHITE,1.4);d.ellipse((322,232,328,244),WHITE)
 d.line([(376,231),(394,231),(394,244),(376,244),(376,231)],WHITE,1.6);d.line([(395,235),(396,235),(396,240)],WHITE,1)
-# Cloud weather icon on the left.
-d.line([(146,230),(143,230),(141,226),(142,222),(146,220),(149,217),(154,217),(158,220),(162,220),(166,223),(166,228),(163,231),(149,231),(146,230)],WHITE,1.5)
 # Lower lock symbol and straight base line.
 d.line([(156,405),(326,405)],'#666666',1.4)
 d.arc((231,412,242,426),180,340,WHITE,2);d.poly([(237,424),(254,424),(254,437),(237,437)],WHITE);d.ellipse((243,428,248,433),'#111111')
 store('background',bg)
+# Colored condition images, in the official Zepp weather-index order 0..28.
+weather_names=['cloudy','showers','snow_showers','sunny','overcast','light_rain','light_snow','moderate_rain','moderate_snow','heavy_snow','heavy_rain','sandstorm','rain_snow','fog','haze','thunderstorms','snowstorm','floating_dust','very_heavy_rain','rain_hail','thunder_hail','heavy_rainstorm','dust','heavy_sandstorm','rainstorm','unknown','cloudy_night','showers_night','clear_night']
+for index,condition in enumerate(weather_names):
+ im=image(36,25);dr=Draw(im)
+ def sun(cx=10,cy=8):
+  dr.ellipse((cx-4,cy-4,cx+4,cy+4),'#f2bc45','#ffe2a0',.6)
+  for ang in range(0,360,45):
+   p1=polar(5.5,ang,cx,cy);p2=polar(7.5,ang,cx,cy);dr.line([p1,p2],'#e9b03b',1)
+ def moon(cx=10,cy=8):
+  dr.ellipse((cx-6,cy-6,cx+6,cy+6),'#e3ddb5');dr.ellipse((cx-2,cy-8,cx+8,cy+2),(0,0,0,0))
+ def cloud(dark=False):
+  col='#8e9da8' if dark else '#bbc9d4'
+  for box in [(9,6,22,18),(16,9,29,20),(4,10,16,20)]:dr.ellipse(box,col)
+  dr.poly([(9,14),(25,14),(25,20),(9,20)],col)
+  dr.arc((9,6,22,18),185,280,'#dde6ed',.75);dr.arc((4,10,16,20),90,250,'#e6edf2',.6)
+ if index==3:sun(18,12)
+ elif index==28:moon(18,12)
+ elif index==25:dr.text('?',18,12,25,'#bcc5ca',kind=BOLD)
+ else:
+  if index in [0,1,2]:sun()
+  if index in [26,27]:moon()
+  cloud(index in [4,10,15,18,20,21,24])
+  if index in [1,5,7,10,12,15,18,19,20,21,24,27]:
+   count=1 if index==5 else 2 if index in [1,7,12,15,19,20,27] else 3
+   for i in range(count):sx=10+i*7;dr.line([(sx,21),(sx-1.4,24)],'#58aee3',1.3)
+  if index in [2,6,8,9,12,16]:
+   for sx in ([13] if index==6 else [10,23]):
+    for angle in [0,60,120]:dr.line([polar(2.2,angle,sx,22),polar(2.2,angle+180,sx,22)],'#d4effb',.7)
+  if index in [15,20]:dr.poly([(23,16),(19,22),(22,22),(20,25),(27,19),(23,19)],'#f2ba46')
+  if index in [19,20]:dr.ellipse((26,21,29,24),'#d5edf6')
+  if index in [11,13,14,17,22,23]:
+   color='#c9a275' if index in [11,17,22,23] else '#a2bac6'
+   for yy in [17,21,24]:dr.line([(5,yy),(30,yy)],color,1.1)
+ store('condition_'+str(index),im)
+
 # Glyph resources, fixed cell widths preserve numeric alignment.
 def glyph(prefix,t,height,width,size,kind=F):
  im=image(width,height);dr=ImageDraw.Draw(im);f=font(size,kind);box=f.getbbox(t);dr.text((width*S/2,(height-2)*S),t,font=f,fill=WHITE,anchor='ms');return store(prefix,im)
@@ -115,20 +160,26 @@ for i,t in enumerate(['ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','Ч
  im=image(109,19);d=Draw(im);d.text(t,54.5,9,17 if len(t)>9 else 20);store('week_'+str(i),im)
 for n,t in [('am','ДП'),('pm','ПП')]:
  im=image(38,25);dr=Draw(im);dr.text(t,19,12,31);store(n,im)
-# Reference blade shapes; long rectangular black slots, original counterweights.
-for name,length,width,tail in [('hour',111,17,31),('minute',179,15,24)]:
- im=image(40,length+tail+7);dr=Draw(im);cx=20;py=length
- dr.poly([(cx-5,2),(cx+5,0),(cx+width/2,10),(cx+width/2,py-18),(cx+7,py-8),(cx+12,py+tail-5),(cx+1,py+tail),(cx-9,py+tail-5),(cx-7,py-8),(cx-width/2,py-18),(cx-width/2,10)],'#d6d7d8')
- dr.line([(cx-5,3),(cx-width/2,11),(cx-width/2,py-18)],'#f4f4f4',1)
- dr.poly([(cx-2,30),(cx+2,30),(cx+2,py-18),(cx-2,py-18)],'#141414');dr.ellipse((cx-4,py-4,cx+4,py+4),'#242424')
+# Long original-style blades with beveled shoulders and tapered, separate counterweights.
+for name,length,width,tail in [('hour',114,18,31),('minute',185,18,26)]:
+ im=image(44,length+tail+8);dr=Draw(im);cx=22;py=length
+ if name=='hour':
+  contour=[(cx-4,2),(cx+4,0),(cx+8,8),(cx+9,py-18),(cx+4,py-7),(cx+4,py+7),(cx+10,py+18),(cx+8,py+26),(cx,py+31),(cx-9,py+27),(cx-10,py+19),(cx-4,py+7),(cx-4,py-7),(cx-9,py-18),(cx-8,10)]
+ else:
+  contour=[(cx-3,0),(cx+3,0),(cx+9,10),(cx+9,py-16),(cx+4,py-5),(cx+4,py+14),(cx,py+26),(cx-5,py+15),(cx-4,py-5),(cx-9,py-16),(cx-9,10)]
+ dr.poly([(x+1,y+1.5) for x,y in contour],(0,0,0,120));dr.poly(contour,'#cdd0d3')
+ dr.line([(cx-4,2),(cx-8,10),(cx-9,py-18)],'#f3f4f4',.9)
+ dr.line([(cx+8,12),(cx+9,py-18)],'#999da0',.75)
+ dr.poly([(cx-1.65,28),(cx+1.65,28),(cx+1.65,py-15),(cx-1.65,py-15)],'#101213')
+ dr.ellipse((cx-4,py-4,cx+4,py+4),'#303336')
  store(name,im)
 # Thin solid green seconds, ending exactly at the minute ring.
 im=image(12,239);dr=Draw(im);dr.poly([(5,0),(7,0),(7,201),(5,201)],GREEN);dr.poly([(5,201),(7,201),(7,231),(5,231)],'#454545');store('second',im)
 im=image(12,12);dr=Draw(im);dr.ellipse((0,0,12,12),'#333333','#171717',1.6);dr.ellipse((4,4,8,8),'#a0a0a0');store('cap',im)
-for n,w,h in [('music',70,55),('steps',70,55),('timer',80,55)]:
- im=Image.new('RGBA',(w,h));im.save(A/('tap_'+n+'.png'));SOURCE['tap_'+n+'.png']=im
+for n,w,h in [('',1,1)]:
+ im=Image.new('RGBA',(w,h));im.save(A/'tap.png');SOURCE['tap.png']=im
 for n,im in list(SOURCE.items()):
- if n.startswith('tap_'):continue
+ if n.startswith('tap'):continue
  a=np.array(im);a[:,:,:3]=(a[:,:,:3].astype(float)*.28).astype('uint8');dim=Image.fromarray(a);dim.save(A/('aod_'+n));SOURCE['aod_'+n]=dim
 # Byte layout is the official Zepp L8_ARGB8888 TGA/SOMH format, RGBA and 16px padding.
 def encode(im):
@@ -139,7 +190,7 @@ def encode(im):
  return bytes(head)+pal.tobytes()+idx.tobytes()
 def decode(b):
  w,h=struct.unpack_from('<HH',b,12);aw=struct.unpack_from('<I',b,22)[0];p=np.frombuffer(b[64:1088],np.uint8).reshape(256,4);idx=np.frombuffer(b[1088:],np.uint8).reshape(h,w);a=p[idx][:,:aw].copy();alpha=a[:,:,3:4].astype(float);a[:,:,:3]=np.clip(np.divide(a[:,:,:3].astype(float)*255,alpha,out=np.zeros_like(a[:,:,:3],dtype=float),where=alpha>0),0,255).astype('uint8');return Image.fromarray(a)
-manifest={'configVersion':'v2','app':{'appId':10623001,'appName':'Amazfit Green RU','appType':'watchface','version':{'code':2,'name':V},'icon':'preview.png','cover':['preview.png'],'vender':'Vitold personal','description':'Русский циферблат по исходному образцу'},'runtime':{'apiVersion':{'minVersion':'1.0','target':'1.0.1','compatible':'1.0.0'}},'permissions':[],'i18n':{'en-US':{'appName':'Amazfit Green RU'}},'defaultLanguage':'en-US','designWidth':480,'module':{'watchface':{'path':'watchface/index','main':1,'editable':0,'lockscreen':1}},'platforms':[{'name':'Balance 2','deviceSource':v} for v in [9568512,9568513,9568515]],'watchfacePreview':{'icon':'preview.png','size':[]},'packageInfo':{'mode':'production','zpm':'3.4.2'}}
+manifest={'configVersion':'v2','app':{'appId':10623001,'appName':'Amazfit Green RU','appType':'watchface','version':{'code':3,'name':V},'icon':'preview.png','cover':['preview.png'],'vender':'Vitold personal','description':'Русский циферблат по исходному образцу'},'runtime':{'apiVersion':{'minVersion':'1.0','target':'1.0.1','compatible':'1.0.0'}},'permissions':[],'i18n':{'en-US':{'appName':'Amazfit Green RU'}},'defaultLanguage':'en-US','designWidth':480,'module':{'watchface':{'path':'watchface/index','main':1,'editable':0,'lockscreen':1}},'platforms':[{'name':'Balance 2','deviceSource':v} for v in [9568512,9568513,9568515]],'watchfacePreview':{'icon':'preview.png','size':[]},'packageInfo':{'mode':'production','zpm':'3.4.2'}}
 (P/'app.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2));mb=json.dumps(manifest,ensure_ascii=False).encode()
 resources={n:encode(im) for n,im in SOURCE.items()}
 # Preview comes from decoded NATIVE resources, not a separate illustrative mockup.
@@ -148,11 +199,11 @@ def paste(n,x,y):canvas.alpha_composite(decode(resources[n+'.png']),(x,y))
 def text(t,prefix,x,y):
  for c in t:
   n={'%':'percent','-':'minus','.':'dot','/':'slash'}.get(c,c);a=decode(resources[prefix+'_'+n+'.png']);canvas.alpha_composite(a,(x,y));x+=a.width
-text('83%','status',311,252);text('97%','status',366,252);text('18','weather',137,242);paste('degree',163,242);paste('pm',122,336)
+text('83','status',302,252);paste('status_percent',331,252);text('97','status',362,252);paste('status_percent',391,252);text('18','weather',137,242);paste('degree',163,242);paste('condition_0',137,213);paste('pm',122,336)
 paste('week_2',143,305);text('14/10/26','date',253,305)
 text('12','digital',171,336);paste('colon',235,336);text('42','digital',251,336);text('40','second',319,336)
-for name,pivot,angle in [('hour',111,22),('minute',179,252),('second',201,240)]:
- layer=Image.new('RGBA',(480,480));asset=decode(resources[name+'.png']);layer.alpha_composite(asset,(240-(6 if name=='second' else 20),240-pivot));canvas.alpha_composite(layer.rotate(-angle,resample=Image.Resampling.BICUBIC,center=(240,240)))
+for name,pivot,angle in [('hour',114,22),('minute',185,252),('second',201,240)]:
+ layer=Image.new('RGBA',(480,480));asset=decode(resources[name+'.png']);layer.alpha_composite(asset,(240-(6 if name=='second' else 22),240-pivot));canvas.alpha_composite(layer.rotate(-angle,resample=Image.Resampling.BICUBIC,center=(240,240)))
 paste('cap',234,234);canvas.convert('RGB').save(D/(B+'-preview.png'));canvas.resize((240,240),Image.Resampling.LANCZOS).save(A/'preview.png');resources['preview.png']=encode(Image.open(A/'preview.png'))
 device=io.BytesIO()
 with zipfile.ZipFile(device,'w',zipfile.ZIP_DEFLATED) as z:

@@ -28,8 +28,11 @@ try {
      return create(hmUI.widget.TEXT_IMG,p);
     };
     // Left percentage is daily step-goal completion, not heart rate in percent.
-    const progress=number(null,302,252,57,'status',26,'status_percent.png');
-    number('BATTERY',357,252,58,'status',26,'status_percent.png');
+    const progress=number(null,295,252,39,'status',26);
+    const battery=number(null,355,252,39,'status',26);
+    create(hmUI.widget.IMG,{x:331,y:252,src:'status_percent.png'});
+    create(hmUI.widget.IMG,{x:391,y:252,src:'status_percent.png'});
+    create(hmUI.widget.IMG_LEVEL,{x:137,y:213,w:36,h:25,image_array:Array.from({length:29},(_,i)=>'condition_'+i+'.png'),image_length:29,type:hmUI.data_type.WEATHER_CURRENT});
     number('WEATHER_CURRENT',132,242,45,'weather',24,'degree.png');
     create(hmUI.widget.IMG,{x:235,y:336,src:'colon.png'});
     create(hmUI.widget.IMG_TIME,{
@@ -48,22 +51,42 @@ try {
     });
     const year=number(null,309,305,20,'date',19);
     create(hmUI.widget.TIME_POINTER,{
-     hour_centerX:240,hour_centerY:240,hour_posX:20,hour_posY:111,hour_path:'hour.png',
-     minute_centerX:240,minute_centerY:240,minute_posX:20,minute_posY:179,minute_path:'minute.png',
+     hour_centerX:240,hour_centerY:240,hour_posX:22,hour_posY:114,hour_path:'hour.png',
+     minute_centerX:240,minute_centerY:240,minute_posX:22,minute_posY:185,minute_path:'minute.png',
      second_centerX:240,second_centerY:240,second_posX:6,second_posY:201,second_path:'second.png'
     });
     create(hmUI.widget.IMG,{x:234,y:234,src:'cap.png'});
     const refresh=()=>{
-     try{if(this._step){const s=this._step,v=Number.isFinite(s.current)&&Number.isFinite(s.target)&&s.target>0?Math.max(0,Math.min(999,Math.round(s.current/s.target*100))) : null;progress.setProperty(hmUI.prop.TEXT,v===null?'--':String(v)+'u')}}catch(e){console.log('Step percentage unavailable',e)}
+     try{if(this._step){const s=this._step,v=Number.isFinite(s.current)&&Number.isFinite(s.target)&&s.target>0?Math.max(0,Math.min(999,Math.round(s.current/s.target*100))) : null;progress.setProperty(hmUI.prop.TEXT,v===null?'--':String(v))}}catch(e){console.log('Step percentage unavailable',e)}
+     try{if(this._battery){const v=this._battery.current;battery.setProperty(hmUI.prop.TEXT,Number.isFinite(v)&&v>=0&&v<=100?String(Math.round(v)):'--')}}catch(e){console.log('Battery value unavailable',e)}
      try{if(this._time&&Number.isFinite(this._time.year))year.setProperty(hmUI.prop.TEXT,('0'+(this._time.year%100)).slice(-2))}catch(e){console.log('Year unavailable',e)}
     };
     try{this._step=hmSensor.createSensor(hmSensor.id.STEP);const fn=refresh,event=hmSensor.event.CHANGE;this._step.addEventListener(event,fn);this._listeners.push({sensor:this._step,event,fn})}catch(e){console.log('Steps unavailable',e)}
+    try{this._battery=hmSensor.createSensor(hmSensor.id.BATTERY);const event=hmSensor.event.CHANGE,fn=refresh;this._battery.addEventListener(event,fn);this._listeners.push({sensor:this._battery,event,fn})}catch(e){console.log('Battery sensor unavailable',e)}
     try{this._time=hmSensor.createSensor(hmSensor.id.TIME)}catch(e){console.log('Date unavailable',e)}
     refresh();
     hmUI.createWidget(hmUI.widget.WIDGET_DELEGATE,{resume_call:refresh,pause_call:()=>{}});
-    [['steps',65,350,70,55,'STEP'],['music',65,55,70,55,'MUSIC'],['timer',330,350,80,55,'STOP_WATCH']].forEach(([n,x,y,w,h,type])=>{
-     if(hmUI.data_type[type]!==undefined)try{hmUI.createWidget(hmUI.widget.IMG_CLICK,{x,y,w,h,src:'tap_'+n+'.png',type:hmUI.data_type[type],show_level:normal})}catch(e){console.log('Shortcut unavailable',type,e)}
+    // Nine non-overlapping annular hit sectors, aligned with the requested captions.
+    const targets=[['heart',345,'HEART'],['steps',315,'STEP'],['distance',285,'DISTANCE'],['stress',255,'STRESS'],['alarm',225,'ALARM_CLOCK'],['stopwatch',195,'STOP_WATCH'],['timer',165,'COUNT_DOWN'],['workout',135,'workout'],['calories',105,'CAL']];
+    const hit=(type,x,y,w,h)=>{
+     try{
+      if(type==='workout'||type==='phone')hmUI.createWidget(hmUI.widget.BUTTON,{x,y,w,h,text:'',normal_src:'tap.png',press_src:'tap.png',show_level:normal,click_func:()=>hmApp.startApp({appid:1,url:type==='workout'?'SportListScreen':'PhoneHomeScreen',native:true})});
+      else if(hmUI.data_type[type]!==undefined)hmUI.createWidget(hmUI.widget.IMG_CLICK,{x,y,w,h,src:'tap.png',type:hmUI.data_type[type],show_level:normal});
+     }catch(e){console.log('Shortcut unavailable',type,e)}
+    };
+    targets.forEach(([name,angle,type])=>{
+     for(let y=0;y<480;y+=6){
+      let first=-1,last=-1;
+      for(let x=0;x<480;x++){
+       const dx=x+.5-240,dy=y+3-240,r=Math.sqrt(dx*dx+dy*dy),a=(Math.atan2(dx,-dy)*180/Math.PI+360)%360,diff=Math.abs(((a-angle+540)%360)-180);
+       if(r>=209&&r<=237&&diff<=11){if(first<0)first=x;last=x}
+      }
+      if(first>=0)hit(type,first,y,last-first+1,6);
+     }
     });
+    // Small inner legend targets occupy only their own chapter-ring sectors.
+    [['MUSIC',285],['BATTERY',315],['phone',345]].forEach(([type,a])=>{const rad=a*Math.PI/180;hit(type,Math.round(240+178*Math.sin(rad)-18),Math.round(240-178*Math.cos(rad)-16),36,32)});
+
    },onInit(){this.init_view()},build(){this.init_view()},onDestroy(){(this._listeners||[]).forEach(x=>{try{x.sensor.removeEventListener(x.event,x.fn)}catch(e){console.log('Listener cleanup',e)}})}
   });
  })();
