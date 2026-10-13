@@ -10,7 +10,7 @@ def encode(im):
  im=im.convert('RGBA');w,h=im.size;pw=(w+15)//16*16;tmp=Image.new('RGBA',(pw,h));tmp.alpha_composite(im);q=tmp.quantize(colors=256,method=Image.Quantize.FASTOCTREE);pal=np.zeros((256,4),np.uint8);e=np.frombuffer(q.palette.palette,np.uint8).reshape(-1,4);pal[:len(e)]=e;pal[:,:3]=np.rint(pal[:,:3].astype(float)*pal[:,3:4]/255).astype('uint8');head=bytearray(64);head[:18]=bytes.fromhex('2e0101000000012000000000000000000820');struct.pack_into('<HH',head,12,pw,h);head[18:22]=b'SOMH';struct.pack_into('<I',head,22,w);return bytes(head)+pal.tobytes()+np.array(q).tobytes()
 with zipfile.ZipFile(D/'Owl-Graphite-Color-v1.0.8-fixed-RU-Balance2.zpk') as z:
  with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as d: files={n:d.read(n) for n in d.namelist()}
-manifest=json.loads(files['app.json']);manifest['app']['appId']=10622109;manifest['app']['appName']='Owl Graphite Color Bezel';manifest['app']['version']={'code':4,'name':'1.0.9'};manifest['i18n']['en-US']['appName']=manifest['app']['appName'];manifest['packageInfo']['timeStamp']=1791897600
+manifest=json.loads(files['app.json']);manifest['app']['appId']=10622109;manifest['app']['appName']='Owl Graphite Color Bezel';manifest['app']['version']={'code':5,'name':'1.0.9'};manifest['i18n']['en-US']['appName']=manifest['app']['appName'];manifest['packageInfo']['timeStamp']=1791897600
 # Retain the proven API 1 bootstrap from the working 1.0.8 package.
 mb=json.dumps(manifest,ensure_ascii=False).encode();files['app.json']=mb;(P/'app.json').write_bytes(mb)
 # The inner content remains byte-for-byte unchanged inside radius 201.
@@ -30,6 +30,12 @@ v=np.where((r>=207.8)&(r<210.7),18+14*(r-207.8),v)
 v=np.where((r>=210.7)&(r<211.6),160,v)
 v=np.where((r>=211.6)&(r<212.4),65,v)
 v=np.where((r>=212.4)&(r<214.7),4,v)
+# Dark flat face bounded by broad radial bevels and a visible outer wall.
+v=np.where((r>=219)&(r<232),24+0.7*np.sin(r*15),v)
+v=np.where((r>=215)&(r<219),78-13*(r-215),v)
+v=np.where((r>=232)&(r<236),27+17*(r-232),v)
+v=np.where((r>=236)&(r<237),105,v)
+v=np.where((r>=237)&(r<=239),60-23*(r-237),v)
 a=np.zeros((480*S,480*S,4),np.uint8);a[:,:,:3]=np.clip(v[:,:,None],0,255);a[:,:,3]=np.where((r>=201)&(r<=239),255,0)
 ring=Image.fromarray(a);draw=ImageDraw.Draw(ring);BLUE=(67,112,154,255);WHITE=(233,235,237,255)
 def polar(rad,ang):t=math.radians(ang);return ((240+rad*math.sin(t))*S,(240-rad*math.cos(t))*S)
@@ -57,9 +63,28 @@ def caption(t,center):
 # Outer bezel has no captions and no touch zones.
 ring=ring.resize((480,480),Image.Resampling.LANCZOS)
 yy,xx=np.mgrid[:480,:480];mask=np.hypot(xx-239.5,yy-239.5)>=201
+original_bg=files['assets/background.png']
 def replace(im):
- im=im.convert('RGBA');ar=np.array(im);ar[mask]=0;im=Image.fromarray(ar);im.alpha_composite(ring);return im
-bg=replace(decode(files['assets/background.png']));files['assets/background.png']=encode(bg)
+ im=im.convert('RGBA');ar=np.array(im)
+ # Soft concentric contact shadow reaches INTO the dial, behind the panels.
+ rad=np.hypot(xx-239.5,yy-239.5);shadow=np.clip((rad-184)/17,0,1)**1.5*.83
+ shadow=np.where(rad<201,shadow,0)
+ # Preserve every circular panel and feather the shadow over the next 3 px.
+ # This prevents a hard dark/light seam beside their outer rims.
+ protection=np.ones((480,480),float)
+ for cx,cy,rr in [(240,110,70),(116,240,70),(364,240,70),(124,124,33),(356,124,33),(124,356,33),(356,356,33)]:
+  distance=np.hypot(xx+.5-cx,yy+.5-cy)-rr
+  t=np.clip(distance/3,0,1)
+  protection=np.minimum(protection,t*t*(3-2*t))
+ shadow*=protection
+ # Preserve live glyphs/hands in the preview; their real widgets are above this background.
+ if im.size==(480,480):
+  old=np.array(decode(original_bg))
+  dynamic=np.max(np.abs(ar[:,:,:3].astype(int)-old[:,:,:3].astype(int)),axis=2)>8
+  shadow[dynamic]=0
+ ar[:,:,:3]=(ar[:,:,:3]*(1-shadow[:,:,None])).astype('uint8')
+ ar[mask]=0;im=Image.fromarray(ar);im.alpha_composite(ring);return im
+bg=replace(decode(original_bg));files['assets/background.png']=encode(bg)
 ad=np.array(bg);ad[:,:,:3]=(ad[:,:,:3]*.28).astype('uint8');files['assets/aod_background.png']=encode(Image.fromarray(ad))
 preview=replace(Image.open(D/'Owl-Graphite-Color-v1.0.8-fixed-preview.png'));preview.save(D/(B+'-preview.png'));files['assets/preview.png']=encode(preview.resize((240,240),Image.Resampling.LANCZOS))
 files['watchface/index.js']=(P/'watchface.js').read_bytes();files['assets/tap_bezel.png']=encode(Image.new('RGBA',(1,1)))
@@ -76,10 +101,10 @@ def archive(items):
   for n,data in items.items():z.writestr(n,data)
  return b.getvalue()
 (D/(B+'-RU-Balance2.zpk')).write_bytes(archive({'device.zip':archive(files),'app-side.zip':archive({'app.json':mb})}))
-(D/(B+'-uniform-bezel-RU-Balance2.zpk')).write_bytes((D/(B+'-RU-Balance2.zpk')).read_bytes())
-url='zpkd1://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/owl-graphite-color-1.0.9/dist/'+B+'-uniform-bezel-RU-Balance2.zpk';q=QrCodeWidget(url,barLevel='M');q.qr.make();m=q.qr.modules;n=len(m);qr=Image.new('RGB',((n+8)*8,)*2,'white');qd=ImageDraw.Draw(qr)
+(D/(B+'-deep-bezel-RU-Balance2.zpk')).write_bytes((D/(B+'-RU-Balance2.zpk')).read_bytes())
+url='zpkd1://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/owl-graphite-color-1.0.9/dist/'+B+'-deep-bezel-RU-Balance2.zpk';q=QrCodeWidget(url,barLevel='M');q.qr.make();m=q.qr.modules;n=len(m);qr=Image.new('RGB',((n+8)*8,)*2,'white');qd=ImageDraw.Draw(qr)
 for y,row in enumerate(m):
  for x,v in enumerate(row):
   if v:qd.rectangle(((x+4)*8,(y+4)*8,(x+5)*8-1,(y+5)*8-1),fill='black')
-qr.save(D/(B+'-zepp-qr.png'));qr.save(D/(B+'-uniform-bezel-zepp-qr.png'))
+qr.save(D/(B+'-zepp-qr.png'));qr.save(D/(B+'-deep-bezel-zepp-qr.png'))
 print('Built',B,'appId',manifest['app']['appId'])
