@@ -7,10 +7,10 @@ try {
         function getCurrentPage() {
             return __$$app$$__.current && __$$app$$__.current.module;
         }
-        __$$app$$__.__globals__ = Object.assign(__$$app$$__.__globals__, {
+        __$$app$$__.__globals__ = {
             lang: new DeviceRuntimeCore.HmUtils.Lang(DeviceRuntimeCore.HmUtils.getLanguage()),
             px: DeviceRuntimeCore.HmUtils.getPx(480)
-        });
+        };
         const {px} = __$$app$$__.__globals__;
         const languageTable = {};
         __$$app$$__.__globals__.gettext = DeviceRuntimeCore.HmUtils.gettextFactory(languageTable, __$$app$$__.__globals__.lang, 'en-US');

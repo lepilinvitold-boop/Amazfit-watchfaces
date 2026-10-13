@@ -104,7 +104,7 @@ __$$module$$__.module = DeviceRuntimeCore.WatchFace({
   createWidget(hmUI.widget.WIDGET_DELEGATE,{resume_call:()=>{refreshRange();this._listeners.forEach(x=>x.update())},pause_call:()=>{}})
 
   // Exact annular hit cells; no cell extends into the inner data panels.
-  const bezelTargets=[['player',315,'SYSTEM_APP_MUSIC'],['pressure',225,'SYSTEM_APP_ALTIMETER'],['settings',135,'SYSTEM_APP_SETTING']];
+  const bezelTargets=[['player',315,'MusicCommonScreen'],['pressure',225,'BaroAltimeterScreen'],['settings',135,'Settings_homeScreen']];
   bezelTargets.forEach(([name,angle,constant])=>{
    for(let y=0;y<480;y+=4){let first=-1,last=-1;
     for(let x=0;x<480;x++){
@@ -116,7 +116,7 @@ __$$module$$__.module = DeviceRuntimeCore.WatchFace({
      if(inside){if(first<0)first=x;last=x;}
     }
     if(first>=0)createWidget(hmUI.widget.BUTTON,{x:first,y,w:last-first+1,h:4,text:'',normal_src:'tap_bezel.png',press_src:'tap_bezel.png',show_level:normal,click_func:()=>{
-     try{const router=__$$RQR$$__('@zos/router');router.launchApp({appId:router[constant],native:true});}catch(e){console.log('Bezel shortcut unavailable',name,e);}
+     try{hmApp.startApp({url:constant,native:true});}catch(e){console.log('Bezel shortcut unavailable',name,e);}
     }});
    }
   });

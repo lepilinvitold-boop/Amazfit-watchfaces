@@ -10,16 +10,20 @@ def encode(im):
  im=im.convert('RGBA');w,h=im.size;pw=(w+15)//16*16;tmp=Image.new('RGBA',(pw,h));tmp.alpha_composite(im);q=tmp.quantize(colors=256,method=Image.Quantize.FASTOCTREE);pal=np.zeros((256,4),np.uint8);e=np.frombuffer(q.palette.palette,np.uint8).reshape(-1,4);pal[:len(e)]=e;pal[:,:3]=np.rint(pal[:,:3].astype(float)*pal[:,3:4]/255).astype('uint8');head=bytearray(64);head[:18]=bytes.fromhex('2e0101000000012000000000000000000820');struct.pack_into('<HH',head,12,pw,h);head[18:22]=b'SOMH';struct.pack_into('<I',head,22,w);return bytes(head)+pal.tobytes()+np.array(q).tobytes()
 with zipfile.ZipFile(D/'Owl-Graphite-Color-v1.0.8-fixed-RU-Balance2.zpk') as z:
  with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as d: files={n:d.read(n) for n in d.namelist()}
-manifest=json.loads(files['app.json']);manifest['app']['appId']=10622109;manifest['app']['appName']='Owl Graphite Color Bezel';manifest['app']['version']={'code':1,'name':'1.0.9'};manifest['i18n']['en-US']['appName']=manifest['app']['appName'];manifest['packageInfo']['timeStamp']=1791897600
-manifest['runtime']['apiVersion']={'minVersion':'3.0','target':'3.0','compatible':'3.0'}
+manifest=json.loads(files['app.json']);manifest['app']['appId']=10622109;manifest['app']['appName']='Owl Graphite Color Bezel';manifest['app']['version']={'code':2,'name':'1.0.9'};manifest['i18n']['en-US']['appName']=manifest['app']['appName'];manifest['packageInfo']['timeStamp']=1791897600
+# Retain the proven API 1 bootstrap from the working 1.0.8 package.
 mb=json.dumps(manifest,ensure_ascii=False).encode();files['app.json']=mb;(P/'app.json').write_bytes(mb)
 # The inner content remains byte-for-byte unchanged inside radius 201.
 y,x=np.mgrid[:480*S,:480*S];dx=x/S-239.5;dy=y/S-239.5;r=np.hypot(dx,dy);light=(-dx-dy)/np.maximum(r,1)
-v=35+9*light+1.1*np.sin(r*12)
-v=np.where((r>=237)&(r<=239),104+65*light,v)
-v=np.where((r>=211)&(r<213),55+30*light,v)
-v=np.where((r>=201)&(r<211),13+5*light,v)
-v=np.where((r>=200.5)&(r<202),57+18*light,v)
+# Broad directional metal lighting, outer chamfer, inner sloped lip and
+# a recessed vertical wall: depth occupies real radial width, not one outline.
+v=57+18*light+1.2*np.sin(r*15)
+v=np.where(r>=234,112+50*light-15*(r-234),v)
+v=np.where(r>=238,30+12*light,v)
+v=np.where((r>=211)&(r<216),94+40*light-8*(r-211),v)
+v=np.where((r>=207)&(r<211),20+8*light+5*(r-207),v)
+v=np.where((r>=201)&(r<207),9+3*light,v)
+v=np.where((r>=200.5)&(r<202),66+24*light,v)
 a=np.zeros((480*S,480*S,4),np.uint8);a[:,:,:3]=np.clip(v[:,:,None],0,255);a[:,:,3]=np.where((r>=201)&(r<=239),255,0)
 ring=Image.fromarray(a);draw=ImageDraw.Draw(ring);BLUE=(67,112,154,255);WHITE=(233,235,237,255)
 def polar(rad,ang):t=math.radians(ang);return ((240+rad*math.sin(t))*S,(240-rad*math.cos(t))*S)
@@ -52,13 +56,8 @@ def replace(im):
 bg=replace(decode(files['assets/background.png']));files['assets/background.png']=encode(bg)
 ad=np.array(bg);ad[:,:,:3]=(ad[:,:,:3]*.28).astype('uint8');files['assets/aod_background.png']=encode(Image.fromarray(ad))
 preview=replace(Image.open(D/'Owl-Graphite-Color-v1.0.8-fixed-preview.png'));preview.save(D/(B+'-preview.png'));files['assets/preview.png']=encode(preview.resize((240,240),Image.Resampling.LANCZOS))
-def runtime_wrap(source,kind):
- scope='__$$hmAppManager$$__.currentApp'+('.current' if kind=='Page' else '')+'.__globals__.__$$G$$__'
- before=('const {beforeModuleCreate=()=>{},afterModuleCreate=()=>{}}=DeviceRuntimeCore.LifeCycle;beforeModuleCreate();' if kind=='Page' else '')
- after='afterModuleCreate();' if kind=='Page' else ''
- return ('{'+before+'const {before'+kind+'Create=()=>{},after'+kind+'Create=()=>{}}=DeviceRuntimeCore.LifeCycle;before'+kind+'Create();const __$$G$$__='+scope+';!function(context){with(context){const __$$RQR$$__=__$$R$$__;'+source+'}}.bind(__$$G$$__)(__$$G$$__);after'+kind+'Create();'+after+'}').encode()
-files['watchface/index.js']=runtime_wrap((P/'watchface.js').read_text(),'Page');files['assets/tap_bezel.png']=encode(Image.new('RGBA',(1,1)))
-files['app.js']=runtime_wrap((P/'app.js').read_text(),'App')
+files['watchface/index.js']=(P/'watchface.js').read_bytes();files['assets/tap_bezel.png']=encode(Image.new('RGBA',(1,1)))
+files['app.js']=(P/'app.js').read_bytes()
 def archive(items):
  b=io.BytesIO()
  with zipfile.ZipFile(b,'w',zipfile.ZIP_DEFLATED) as z:
