@@ -14,7 +14,7 @@ const font = name => Array.from({length:10},(_,i)=>name+'_'+i+'.png')
 const rings = Array.from({length:21},(_,i)=>'graph_ring_'+i+'.png')
 const heartRings = Array.from({length:21},(_,i)=>'heart_ring_'+i+'.png')
 const weeks = Array.from({length:7},(_,i)=>'week_'+i+'.png')
-const taps = [["battery",324,92,64,64,"BATTERY"],["heart",232,41,16,8,"HEART"],["heart",207,49,66,8,"HEART"],["heart",196,57,88,8,"HEART"],["heart",188,65,104,8,"HEART"],["heart",182,73,116,8,"HEART"],["heart",178,81,124,8,"HEART"],["heart",175,89,130,8,"HEART"],["heart",173,97,134,8,"HEART"],["heart",172,105,136,8,"HEART"],["heart",172,113,136,8,"HEART"],["heart",173,121,134,2,"HEART"],["heart",174,123,132,6,"HEART"],["heart",177,129,126,8,"HEART"],["heart",181,137,118,8,"HEART"],["heart",186,145,108,8,"HEART"],["heart",193,153,94,8,"HEART"],["heart",204,161,72,8,"HEART"],["heart",222,169,36,8,"HEART"],["heart",232,177,16,2,"HEART"],["stress",108,171,16,8,"STRESS"],["stress",83,179,66,8,"STRESS"],["stress",72,187,88,8,"STRESS"],["stress",64,195,104,8,"STRESS"],["stress",58,203,116,8,"STRESS"],["stress",54,211,124,8,"STRESS"],["stress",51,219,130,8,"STRESS"],["stress",49,227,134,8,"STRESS"],["stress",48,235,136,8,"STRESS"],["stress",48,243,136,8,"STRESS"],["stress",49,251,134,2,"STRESS"],["calories",50,253,132,6,"CAL"],["calories",53,259,126,8,"CAL"],["calories",57,267,118,8,"CAL"],["calories",62,275,108,8,"CAL"],["calories",69,283,94,8,"CAL"],["calories",80,291,72,8,"CAL"],["calories",98,299,36,8,"CAL"],["calories",108,307,16,2,"CAL"],["steps",356,171,16,8,"STEP"],["steps",331,179,66,8,"STEP"],["steps",320,187,88,8,"STEP"],["steps",312,195,104,8,"STEP"],["steps",306,203,116,8,"STEP"],["steps",302,211,124,8,"STEP"],["steps",299,219,130,8,"STEP"],["steps",297,227,134,8,"STEP"],["steps",296,235,136,8,"STEP"],["steps",296,243,136,8,"STEP"],["steps",297,251,134,2,"STEP"],["distance",298,253,132,6,"DISTANCE"],["distance",301,259,126,8,"DISTANCE"],["distance",305,267,118,8,"DISTANCE"],["distance",310,275,108,8,"DISTANCE"],["distance",317,283,94,8,"DISTANCE"],["distance",328,291,72,8,"DISTANCE"],["distance",346,299,36,8,"DISTANCE"],["distance",356,307,16,2,"DISTANCE"],["weather",177,283,126,49,"WEATHER_CURRENT"],["hours",178,350,56,49,"STOP_WATCH"],["minutes",246,350,56,49,"COUNT_DOWN"],["alarm",324,324,64,64,"ALARM_CLOCK"]]
+const taps = [["battery", 324, 92, 64, 64, "Settings_batteryManagerScreen"], ["heart", 182, 52, 116, 114, "heart_app_Screen"], ["stress", 60, 182, 112, 64, "StressHomeScreen"], ["calories", 60, 253, 112, 49, "activityAppScreen"], ["steps", 308, 182, 112, 64, "activityAppScreen"], ["distance", 308, 253, 112, 49, "activityAppScreen"], ["weather", 177, 283, 126, 49, "WeatherScreen"], ["hours", 178, 350, 56, 49, "StopWatchScreen"], ["minutes", 246, 350, 56, 49, "CountdownAppScreen"], ["alarm", 324, 324, 64, 64, "AlarmInfoScreen"], ["date", 185, 404, 110, 38, "ScheduleCalScreen"], ["phone", 92, 324, 64, 64, "PhoneHomeScreen"], ["workout", 92, 92, 64, 64, "SportListScreen"]]
 __$$module$$__.module = DeviceRuntimeCore.WatchFace({
  init_view(){
   if(this._built)return;this._built=true;
@@ -103,28 +103,13 @@ __$$module$$__.module = DeviceRuntimeCore.WatchFace({
   refreshRange()
   createWidget(hmUI.widget.WIDGET_DELEGATE,{resume_call:()=>{refreshRange();this._listeners.forEach(x=>x.update())},pause_call:()=>{}})
 
-  // Exact annular hit cells; no cell extends into the inner data panels.
-  const bezelTargets=[['player',315,'MusicCommonScreen'],['pressure',225,'BaroAltimeterScreen'],['settings',135,'Settings_homeScreen']];
-  bezelTargets.forEach(([name,angle,constant])=>{
-   for(let y=0;y<480;y+=4){let first=-1,last=-1;
-    for(let x=0;x<480;x++){
-     let inside=true;
-     for(const [ox,oy] of [[0,0],[1,0],[0,4],[1,4]]){
-      const dx=x+ox-240,dy=y+oy-240,r=Math.hypot(dx,dy),a=(Math.atan2(dx,-dy)*180/Math.PI+360)%360,d=Math.abs(((a-angle+540)%360)-180);
-      if(r<214||r>237||d>11)inside=false;
-     }
-     if(inside){if(first<0)first=x;last=x;}
-    }
-    if(first>=0)createWidget(hmUI.widget.BUTTON,{x:first,y,w:last-first+1,h:4,text:'',normal_src:'tap_bezel.png',press_src:'tap_bezel.png',show_level:normal,click_func:()=>{
-     try{hmApp.startApp({url:constant,native:true});}catch(e){console.log('Bezel shortcut unavailable',name,e);}
-    }});
-   }
+  // Explicit buttons with matching resource dimensions; all created after
+  // visual widgets and enabled independently of the visual/AOD factory.
+  taps.forEach(([name,x,y,w,h,url])=>{
+   const button=hmUI.createWidget(hmUI.widget.BUTTON,{x,y,w,h,text:'',normal_src:'hit_'+name+'.png',press_src:'hit_'+name+'.png',show_level:normal,enable:true,click_func:()=>hmApp.startApp({url,native:true})});
+   button.setEnable(true);
   });
-  // All tap targets on top, so moving hands cannot cover hit regions.
-  taps.forEach(([name,x,y,w,h,type])=>createWidget(hmUI.widget.IMG_CLICK,{x,y,w,h,src:'tap_'+name+'.png',type:hmUI.data_type[type],show_level:normal}))
-  createWidget(hmUI.widget.BUTTON,{x:185,y:404,w:110,h:38,text:'',normal_src:'tap_date.png',press_src:'tap_date.png',show_level:normal,click_func:()=>hmApp.startApp({appid:1,url:'ScheduleCalScreen',native:true})})
-  createWidget(hmUI.widget.BUTTON,{x:92,y:324,w:64,h:64,text:'',normal_src:'tap_phone.png',press_src:'tap_phone.png',show_level:normal,click_func:()=>hmApp.startApp({appid:1,url:'PhoneHomeScreen',native:true})})
-  createWidget(hmUI.widget.BUTTON,{x:92,y:92,w:64,h:64,text:'',normal_src:'tap_workout.png',press_src:'tap_workout.png',show_level:normal,click_func:()=>hmApp.startApp({appid:1,url:'SportListScreen',native:true})})
+
  },onInit(){this.init_view()},build(){this.init_view()},onDestroy(){
   try{(this._listeners||[]).forEach(x=>x.sensor.removeEventListener(x.event,x.update));if(this._heart&&this._heartCallback)this._heart.removeEventListener(this._heartEvent,this._heartCallback)}catch(e){console.log('Owl heart listener cleanup',e)}
  }

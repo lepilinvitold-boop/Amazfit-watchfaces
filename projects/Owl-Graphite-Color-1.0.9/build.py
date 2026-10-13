@@ -10,7 +10,7 @@ def encode(im):
  im=im.convert('RGBA');w,h=im.size;pw=(w+15)//16*16;tmp=Image.new('RGBA',(pw,h));tmp.alpha_composite(im);q=tmp.quantize(colors=256,method=Image.Quantize.FASTOCTREE);pal=np.zeros((256,4),np.uint8);e=np.frombuffer(q.palette.palette,np.uint8).reshape(-1,4);pal[:len(e)]=e;pal[:,:3]=np.rint(pal[:,:3].astype(float)*pal[:,3:4]/255).astype('uint8');head=bytearray(64);head[:18]=bytes.fromhex('2e0101000000012000000000000000000820');struct.pack_into('<HH',head,12,pw,h);head[18:22]=b'SOMH';struct.pack_into('<I',head,22,w);return bytes(head)+pal.tobytes()+np.array(q).tobytes()
 with zipfile.ZipFile(D/'Owl-Graphite-Color-v1.0.8-fixed-RU-Balance2.zpk') as z:
  with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as d: files={n:d.read(n) for n in d.namelist()}
-manifest=json.loads(files['app.json']);manifest['app']['appId']=10622109;manifest['app']['appName']='Owl Graphite Color Bezel';manifest['app']['version']={'code':2,'name':'1.0.9'};manifest['i18n']['en-US']['appName']=manifest['app']['appName'];manifest['packageInfo']['timeStamp']=1791897600
+manifest=json.loads(files['app.json']);manifest['app']['appId']=10622109;manifest['app']['appName']='Owl Graphite Color Bezel';manifest['app']['version']={'code':3,'name':'1.0.9'};manifest['i18n']['en-US']['appName']=manifest['app']['appName'];manifest['packageInfo']['timeStamp']=1791897600
 # Retain the proven API 1 bootstrap from the working 1.0.8 package.
 mb=json.dumps(manifest,ensure_ascii=False).encode();files['app.json']=mb;(P/'app.json').write_bytes(mb)
 # The inner content remains byte-for-byte unchanged inside radius 201.
@@ -24,6 +24,7 @@ v=np.where((r>=211)&(r<216),94+40*light-8*(r-211),v)
 v=np.where((r>=207)&(r<211),20+8*light+5*(r-207),v)
 v=np.where((r>=201)&(r<207),9+3*light,v)
 v=np.where((r>=200.5)&(r<202),66+24*light,v)
+v=np.where(r>=211,v*.58,v)
 a=np.zeros((480*S,480*S,4),np.uint8);a[:,:,:3]=np.clip(v[:,:,None],0,255);a[:,:,3]=np.where((r>=201)&(r<=239),255,0)
 ring=Image.fromarray(a);draw=ImageDraw.Draw(ring);BLUE=(67,112,154,255);WHITE=(233,235,237,255)
 def polar(rad,ang):t=math.radians(ang);return ((240+rad*math.sin(t))*S,(240-rad*math.cos(t))*S)
@@ -48,7 +49,7 @@ def caption(t,center):
  total=225*math.radians(21);gap=(total-sum(widths))/(len(t)-1);offset=-total/2;direction=-1 if 90<center<270 else 1
  for ch,w in zip(t,widths):
   text(ch,225,center+direction*math.degrees((offset+w/2)/225),size,BLUE);offset+=w+gap
-caption('ПЛЕЕР',315);caption('ДАВЛЕНИЕ',225);caption('НАСТРОЙКИ',135)
+# Outer bezel has no captions and no touch zones.
 ring=ring.resize((480,480),Image.Resampling.LANCZOS)
 yy,xx=np.mgrid[:480,:480];mask=np.hypot(xx-239.5,yy-239.5)>=201
 def replace(im):
@@ -58,15 +59,22 @@ ad=np.array(bg);ad[:,:,:3]=(ad[:,:,:3]*.28).astype('uint8');files['assets/aod_ba
 preview=replace(Image.open(D/'Owl-Graphite-Color-v1.0.8-fixed-preview.png'));preview.save(D/(B+'-preview.png'));files['assets/preview.png']=encode(preview.resize((240,240),Image.Resampling.LANCZOS))
 files['watchface/index.js']=(P/'watchface.js').read_bytes();files['assets/tap_bezel.png']=encode(Image.new('RGBA',(1,1)))
 files['app.js']=(P/'app.js').read_bytes()
+# Full-size, almost invisible button images, rather than mismatched clipped
+# image-click resources or very narrow rows.
+import re
+hit_targets=json.loads(re.search(r'const taps = (.*)',(P/'watchface.js').read_text()).group(1))
+for name,x,y,w,h,url in hit_targets:files['assets/hit_'+name+'.png']=encode(Image.new('RGBA',(w,h),(0,0,0,1)))
+
 def archive(items):
  b=io.BytesIO()
  with zipfile.ZipFile(b,'w',zipfile.ZIP_DEFLATED) as z:
   for n,data in items.items():z.writestr(n,data)
  return b.getvalue()
 (D/(B+'-RU-Balance2.zpk')).write_bytes(archive({'device.zip':archive(files),'app-side.zip':archive({'app.json':mb})}))
-url='zpkd1://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/owl-graphite-color-1.0.9/dist/'+B+'-RU-Balance2.zpk';q=QrCodeWidget(url,barLevel='M');q.qr.make();m=q.qr.modules;n=len(m);qr=Image.new('RGB',((n+8)*8,)*2,'white');qd=ImageDraw.Draw(qr)
+(D/(B+'-touch-fixed-RU-Balance2.zpk')).write_bytes((D/(B+'-RU-Balance2.zpk')).read_bytes())
+url='zpkd1://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/owl-graphite-color-1.0.9/dist/'+B+'-touch-fixed-RU-Balance2.zpk';q=QrCodeWidget(url,barLevel='M');q.qr.make();m=q.qr.modules;n=len(m);qr=Image.new('RGB',((n+8)*8,)*2,'white');qd=ImageDraw.Draw(qr)
 for y,row in enumerate(m):
  for x,v in enumerate(row):
   if v:qd.rectangle(((x+4)*8,(y+4)*8,(x+5)*8-1,(y+5)*8-1),fill='black')
-qr.save(D/(B+'-zepp-qr.png'))
+qr.save(D/(B+'-zepp-qr.png'));qr.save(D/(B+'-touch-fixed-zepp-qr.png'))
 print('Built',B,'appId',manifest['app']['appId'])
