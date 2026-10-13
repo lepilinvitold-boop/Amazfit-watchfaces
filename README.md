@@ -4,6 +4,7 @@
 
 | Версия | Установка | Скачать |
 | --- | --- | --- |
+| Amazfit Green RU 1.0.3: надписи по дуге, блокировка тапов, исправленные шрифты и стрелки | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.3-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.3-Balance2.zpk) |
 | Amazfit Green RU 1.0.2: объёмный безель, углублённая панель, новые подписи, стрелки и цветная погода | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.2-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.2-Balance2.zpk) |
 | Amazfit Green RU 1.0.1: исправленный запуск и новый рисунок по образцу | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.1-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.1-Balance2.zpk) |
 | Owl Steel 0.94.7.1: внутренний ободок и панель даты, полный АОД | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7.1-install-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7.1-RU-Balance2.zpk) |

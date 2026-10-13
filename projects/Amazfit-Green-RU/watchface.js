@@ -8,7 +8,7 @@ try {
   const {px}=__$$app$$__.__globals__;
   __$$module$$__.module=DeviceRuntimeCore.WatchFace({
    init_view(){
-    if(this._built)return;this._built=true;this._listeners=[];
+    if(this._built)return;this._built=true;this._listeners=[];this._tapWidgets=[];this._locked=false;
     const normal=hmUI.show_level.ONLY_NORMAL,aod=hmUI.show_level.ONAL_AOD;
     const fonts=n=>Array.from({length:10},(_,i)=>n+'_'+i+'.png');
     const dim=v=>typeof v==='string'&&v.endsWith('.png')?'aod_'+v:Array.isArray(v)?v.map(dim):v;
@@ -28,10 +28,10 @@ try {
      return create(hmUI.widget.TEXT_IMG,p);
     };
     // Left percentage is daily step-goal completion, not heart rate in percent.
-    const progress=number(null,295,252,39,'status',26);
-    const battery=number(null,355,252,39,'status',26);
-    create(hmUI.widget.IMG,{x:331,y:252,src:'status_percent.png'});
-    create(hmUI.widget.IMG,{x:391,y:252,src:'status_percent.png'});
+    const progress=number(null,295,250,45,'status',30);
+    const battery=number(null,355,250,45,'status',30);
+    create(hmUI.widget.IMG,{x:341,y:250,src:'status_percent.png'});
+    create(hmUI.widget.IMG,{x:401,y:250,src:'status_percent.png'});
     create(hmUI.widget.IMG_LEVEL,{x:137,y:213,w:36,h:25,image_array:Array.from({length:29},(_,i)=>'condition_'+i+'.png'),image_length:29,type:hmUI.data_type.WEATHER_CURRENT});
     number('WEATHER_CURRENT',132,242,45,'weather',24,'degree.png');
     create(hmUI.widget.IMG,{x:235,y:336,src:'colon.png'});
@@ -70,8 +70,10 @@ try {
     const targets=[['heart',345,'HEART'],['steps',315,'STEP'],['distance',285,'DISTANCE'],['stress',255,'STRESS'],['alarm',225,'ALARM_CLOCK'],['stopwatch',195,'STOP_WATCH'],['timer',165,'COUNT_DOWN'],['workout',135,'workout'],['calories',105,'CAL']];
     const hit=(type,x,y,w,h)=>{
      try{
-      if(type==='workout'||type==='phone')hmUI.createWidget(hmUI.widget.BUTTON,{x,y,w,h,text:'',normal_src:'tap.png',press_src:'tap.png',show_level:normal,click_func:()=>hmApp.startApp({appid:1,url:type==='workout'?'SportListScreen':'PhoneHomeScreen',native:true})});
-      else if(hmUI.data_type[type]!==undefined)hmUI.createWidget(hmUI.widget.IMG_CLICK,{x,y,w,h,src:'tap.png',type:hmUI.data_type[type],show_level:normal});
+      let widget;
+      if(type==='workout'||type==='phone')widget=hmUI.createWidget(hmUI.widget.BUTTON,{x,y,w,h,text:'',normal_src:'tap.png',press_src:'tap.png',show_level:normal,click_func:()=>hmApp.startApp({appid:1,url:type==='workout'?'SportListScreen':'PhoneHomeScreen',native:true})});
+      else if(hmUI.data_type[type]!==undefined)widget=hmUI.createWidget(hmUI.widget.IMG_CLICK,{x,y,w,h,src:'tap.png',type:hmUI.data_type[type],show_level:normal});
+      if(widget)this._tapWidgets.push(widget);
      }catch(e){console.log('Shortcut unavailable',type,e)}
     };
     targets.forEach(([name,angle,type])=>{
@@ -84,8 +86,25 @@ try {
       if(first>=0)hit(type,first,y,last-first+1,6);
      }
     });
-    // Small inner legend targets occupy only their own chapter-ring sectors.
-    [['MUSIC',285],['BATTERY',315],['phone',345]].forEach(([type,a])=>{const rad=a*Math.PI/180;hit(type,Math.round(240+178*Math.sin(rad)-18),Math.round(240-178*Math.cos(rad)-16),36,32)});
+    // Inner arc targets follow the same radial layout, not rectangular whole-word bounds.
+    [['MUSIC',285],['BATTERY',315],['phone',345]].forEach(([type,angle])=>{
+     for(let y=0;y<480;y+=6){let first=-1,last=-1;
+      for(let x=0;x<480;x++){const dx=x+.5-240,dy=y+3-240,r=Math.sqrt(dx*dx+dy*dy),a=(Math.atan2(dx,-dy)*180/Math.PI+360)%360,diff=Math.abs(((a-angle+540)%360)-180);if(r>=165&&r<=188&&diff<=11){if(first<0)first=x;last=x}}
+      if(first>=0)hit(type,first,y,last-first+1,6);
+     }
+    });
+    // Local touch lock. System buttons/OS lock remain controlled by the watch firmware.
+    const shield=hmUI.createWidget(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,src:'shield.png',show_level:normal,enable:false});
+    const lockIcon=hmUI.createWidget(hmUI.widget.IMG,{x:226,y:409,w:28,h:30,src:'lock_open.png',show_level:normal,enable:false});
+    const aodLock=hmUI.createWidget(hmUI.widget.IMG,{x:226,y:409,w:28,h:30,src:'aod_lock_open.png',show_level:aod,enable:false});
+    this._setLocked=value=>{
+     this._locked=value;
+     this._tapWidgets.forEach(w=>w.setEnable(!value));
+     shield.setEnable(value);
+     lockIcon.setProperty(hmUI.prop.MORE,{src:value?'lock_closed.png':'lock_open.png'});
+     aodLock.setProperty(hmUI.prop.MORE,{src:value?'aod_lock_closed.png':'aod_lock_open.png'});
+    };
+    hmUI.createWidget(hmUI.widget.BUTTON,{x:216,y:403,w:48,h:43,text:'',normal_src:'tap.png',press_src:'tap.png',show_level:normal,click_func:()=>this._setLocked(!this._locked)});
 
    },onInit(){this.init_view()},build(){this.init_view()},onDestroy(){(this._listeners||[]).forEach(x=>{try{x.sensor.removeEventListener(x.event,x.fn)}catch(e){console.log('Listener cleanup',e)}})}
   });

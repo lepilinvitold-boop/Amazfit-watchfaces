@@ -8,7 +8,7 @@ function run(optionalFails=false){
  const step={current:8300,target:10000,addEventListener:(event,fn)=>stepHandler=fn,removeEventListener:()=>removed=true};
  const battery={current:48,addEventListener:(event,fn)=>batteryHandler=fn,removeEventListener:()=>batteryRemoved=true};
  const hmUI={widget:constants,data_type:constants,show_level:constants,align:constants,prop:constants,
-  createWidget(type,props){assert(bootstrap,'Application app.js must run before widgets');assert(current.__globals__.px);const record={type,props:{...props},updates:[]};widgets.push(record);return {setProperty(k,v){record.updates.push([k,v]);record.props[k]=v}}}};
+  createWidget(type,props){assert(bootstrap,'Application app.js must run before widgets');assert(current.__globals__.px);const record={type,props:{...props},updates:[]};widgets.push(record);return {setProperty(k,v){record.updates.push([k,v]);record.props[k]=v},setEnable(v){record.props.enable=v}}}};
  const core={HmUtils:{Lang:function(){},getLanguage:()=>0,getPx:()=>x=>x,gettextFactory:()=>x=>x},App:config=>{bootstrap=true;return config},HmDomApi:function(){assert(bootstrap)},WidgetFactory:function(){},WatchFace:config=>(face=config)};
  const sensor={id:constants,event:constants,createSensor(id){if(optionalFails)throw Error('Optional sensors unavailable');return id==='STEP'?step:id==='BATTERY'?battery:{year:2026}}};
  const sandbox={__$$hmAppManager$$__:{currentApp:current},DeviceRuntimeCore:core,hmUI,hmSensor:sensor,console:{log:(...x)=>logs.push(x)}};
@@ -37,6 +37,7 @@ function run(optionalFails=false){
   step.current=0;stepHandler();assert(widgets.some(w=>w.updates.some(([key,val])=>key==='TEXT'&&val==='0')));
   step.target=0;stepHandler();assert(widgets.some(w=>w.updates.some(([key,val])=>key==='TEXT'&&val==='--')));
  }
+ const lock=widgets.find(w=>w.type==='BUTTON'&&w.props.x===216&&w.props.y===403);assert(lock,'Lock button missing');lock.props.click_func();assert(face._locked);assert(widgets.find(w=>w.props.src==='shield.png').props.enable===true);assert(hits.filter(w=>w!==lock).every(w=>w.props.enable===false),'Locked shortcuts remain enabled');assert(widgets.some(w=>w.updates.some(([k,v])=>k==='MORE'&&v.src==='lock_closed.png')));lock.props.click_func();assert(!face._locked);assert(widgets.find(w=>w.props.src==='shield.png').props.enable===false);assert(hits.filter(w=>w!==lock).every(w=>w.props.enable===true),'Unlock did not restore shortcuts');
  face.onDestroy();if(!optionalFails)assert(removed&&batteryRemoved,'Listener leak');
  assert(!logs.some(x=>String(x[0]).includes('Amazfit Green RU error')),'Fatal runtime failure');
  return n;
