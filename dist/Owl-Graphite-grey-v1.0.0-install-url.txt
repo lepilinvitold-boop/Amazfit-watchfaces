@@ -1,1 +1,0 @@
-zpkd1://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/owl-graphite-grey-1.0.0/dist/Owl-Graphite-grey-v1.0.0-RU-Balance2.zpk

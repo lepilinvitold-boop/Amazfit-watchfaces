@@ -11,7 +11,7 @@ def archive(items):
  with zipfile.ZipFile(b,'w',zipfile.ZIP_DEFLATED) as z:
   for n,v in items.items():z.writestr(n,v)
  return b.getvalue()
-with zipfile.ZipFile(D/'Owl-Graphite-grey-v1.0.0-RU-Balance2.zpk') as z:
+with zipfile.ZipFile(D/(B+'-RU-Balance2.zpk')) as z:
  with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as d:base={n:d.read(n) for n in d.namelist()}
 files=dict(base);m=json.loads(files['app.json']);m['app']['version']={'code':2,'name':'1.0.1'};m['packageInfo']['timeStamp']=int(time.time());mb=json.dumps(m,ensure_ascii=False).encode();files['app.json']=mb;(P/'app.json').write_bytes(mb)
 for n,src in [('app.js','app.js'),('watchface/index.js','watchface.js')]:files[n]=(P/src).read_bytes()
