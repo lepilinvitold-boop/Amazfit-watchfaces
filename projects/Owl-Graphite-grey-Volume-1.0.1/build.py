@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 P=Path(__file__).resolve().parent;ROOT=P.parents[1];D=ROOT/'dist'
 codec=P.parent/'Owl-Graphite-Color-1.0.9/build.py';s=codec.read_text();ns={'__file__':str(codec)};exec(s[:s.index('with zipfile.ZipFile')],ns);decode=ns['decode']
-with zipfile.ZipFile(D/'Owl-Graphite-grey-Volume-v1.0.0-RU-Balance2.zpk') as z:
+with zipfile.ZipFile(D/'Owl-Graphite-grey-Volume-v1.0.1-RU-Balance2.zpk') as z:
  with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as d:files={n:d.read(n) for n in d.namelist()}
 def asset(n):return decode(files['assets/'+n+'.png'])
 
@@ -14,39 +14,8 @@ from reportlab.graphics.barcode.qr import QrCodeWidget
 B='Owl-Graphite-grey-Volume-v1.0.1';encode=ns['encode']
 base=dict(files)
 CIRCLES=[(240,115,65,74),(116,240,65,74),(364,240,65,74),(124,124,27,36),(356,124,30,36),(124,356,27,36),(356,356,27,36)]
-def background(blob,aod=False):
- source=decode(blob);paint=source.copy();mask=np.zeros((480,480),bool)
- # Move only the pulse divider and MIN-MAX label up 10 px, unchanged glyph pixels.
- block=source.crop((190,113,290,129));paint.paste(source.getpixel((240,150)),(190,103,290,129));paint.paste(block,(190,103));mask[103:129,190:290]=True
- yy,xx=np.mgrid[:480,:480]
- for cx,cy,inner,outer in CIRCLES:
-  S=4;size=2*outer+4;y,x=np.mgrid[:size*S,:size*S];dx=(x+.5)/S-size/2;dy=(y+.5)/S-size/2;r=np.hypot(dx,dy);t=(r-inner)/(outer-inner)
-  light=-(dx+dy)/np.maximum(r,1)/np.sqrt(2)
-  value=np.interp(t,[0,.07,.13,.20,.35,.60,.73,.80,.87,.94,1],[6,10,55,180,125,82,62,105,28,10,3])
-  value+=light*(18+45*np.sin(np.clip(t,0,1)*np.pi));value*=.36 if aod else 1
-  a=np.zeros((*r.shape,4),np.uint8);a[:,:,:3]=np.clip(value[:,:,None],1,225).astype(np.uint8);a[:,:,3]=np.where((r>=inner)&(r<outer),255,0)
-  patch=Image.fromarray(a).resize((size,size),Image.Resampling.LANCZOS);paint.alpha_composite(patch,(cx-size//2,cy-size//2))
-  rad=np.hypot(xx-cx+.5,yy-cy+.5);mask|=(rad>=inner-1)&(rad<=outer+1)
- # Only changed circle pixels get new indices. Preserve palette and every other pixel.
- out=bytearray(blob);pw,h=struct.unpack_from('<HH',out,12);pal=np.frombuffer(out,np.uint8,offset=64,count=1024).reshape(256,4);indices=np.frombuffer(out,np.uint8,offset=1088).reshape(h,pw);old=indices.copy()
- rgba=np.array(paint);alpha=rgba[:,:,3:4].astype(float);premul=rgba.copy();premul[:,:,:3]=np.rint(rgba[:,:,:3]*alpha/255).astype(np.uint8)
- changed=mask&np.any(np.array(source)!=rgba,axis=2)
- values=premul[changed].astype(float);choices=np.where(pal[:,3]>=254)[0]
- # Quantize only modified pixels, using the existing fine steel ramp.
- for start in range(0,len(values),2000):
-  v=values[start:start+2000];nearest=((pal[choices].astype(float)[None,:,:]-v[:,None,:])**2).sum(2).argmin(1)
-  positions=np.flatnonzero(changed)[start:start+len(v)];indices[:,:480].flat[positions]=choices[nearest]
- assert np.array_equal(old[:,:480][~mask],indices[:,:480][~mask])
- assert blob[:1088]==bytes(out[:1088])
- return bytes(out)
-for prefix in ['', 'aod_']:
- files['assets/'+prefix+'background.png']=background(base['assets/'+prefix+'background.png'],bool(prefix))
- for name in ['heart','graph','stress','calorie']:
-  for level in range(21):
-   key='assets/'+prefix+name+'_ring_'+str(level)+'.png';a=decode(base[key]);a=a.resize((130,130),Image.Resampling.LANCZOS);tile=Image.new('RGBA',(138,138));tile.alpha_composite(a,(4,4));files[key]=encode(tile)
-# All font files, units, labels in the unchanged inner areas, icons and hands retained.
-for key,value in base.items():
- if key.startswith('assets/') and not any(part in key for part in ['background.png','heart_ring_','graph_ring_','stress_ring_','calorie_ring_','preview.png']):assert files[key]==value,key
+# The accepted 1.0.1 package is the canonical native asset set.
+# Repack its verified assets directly; do not resize frames or move labels again.
 for i,(x,y,inner,outer) in enumerate(CIRCLES):
  assert np.hypot(x-240,y-240)+outer<201
  for xx,yy,ii,oo in CIRCLES[i+1:]:assert np.hypot(x-xx,y-yy)>outer+oo

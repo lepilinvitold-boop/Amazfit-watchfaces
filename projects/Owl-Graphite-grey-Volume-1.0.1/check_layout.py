@@ -7,9 +7,10 @@ s=(P.parent/'Owl-Graphite-Color-1.0.9/build.py').read_text();ns={'__file__':str(
 def unpack(path):
  with zipfile.ZipFile(path) as z:
   with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as d:return {n:d.read(n) for n in d.namelist()}
-old=unpack(D/'Owl-Graphite-grey-Volume-v1.0.0-RU-Balance2.zpk');new=unpack(D/'Owl-Graphite-grey-Volume-v1.0.1-RU-Balance2.zpk')
-fonts=[n for n in old if re.search(r'(circle|small|detail|battery|range|time|date)_\d\.png$',n)]
-assert fonts and all(old[n]==new[n] for n in fonts)
+new=unpack(D/'Owl-Graphite-grey-Volume-v1.0.1-RU-Balance2.zpk')
+import hashlib
+fonts=json.loads((P/'font-sha256.json').read_text())
+assert fonts and all(hashlib.sha256(new[n]).hexdigest()==digest for n,digest in fonts.items())
 assert json.loads(new['app.json'])['app']['appId']==10622121
 
 def mask_asset(n):return np.array(decode(new['assets/'+n+'.png']))[:,:,3]>100
