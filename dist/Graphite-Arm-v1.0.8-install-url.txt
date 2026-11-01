@@ -1,1 +1,0 @@
-zpkd1://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/graphite-arm-1.0.8/dist/Graphite-Arm-v1.0.8-RU-Balance2.zpk
