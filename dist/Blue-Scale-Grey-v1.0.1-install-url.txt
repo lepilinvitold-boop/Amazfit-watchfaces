@@ -1,1 +1,0 @@
-zpkd1://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/blue-scale-grey-1.0.1/dist/Blue-Scale-Grey-v1.0.1-RU-Balance2.zpk
