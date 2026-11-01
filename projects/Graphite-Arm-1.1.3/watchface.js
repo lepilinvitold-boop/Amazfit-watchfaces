@@ -24,16 +24,17 @@ mod.module=DeviceRuntimeCore.WatchFace({
    const refresh=()=>{let v=NaN,r=0;try{v=read(sensor);r=ratio(sensor,v)}catch(e){}const valid=Number.isFinite(v)&&v>=0;const tone=valid?(name==='battery'&&v<20?'red_':name==='steps'&&r>=1?'green_':name==='stress'&&v>=80?'blue_':''):'';const text=name==='stress'?(valid?String(Math.round(v)):'−'):(valid&&Number.isFinite(r)?String(Math.min(9999,Math.max(0,Math.round(r*100))))+'%':'−');const level=Number.isFinite(r)?Math.max(0,Math.min(20,Math.round(r*20))):0;w.setProperty(hmUI.prop.SRC,tone+name+'_scale_'+level+'.png');chars.forEach((ch,i)=>{ch.setProperty(hmUI.prop.VISIBLE,showLabel&&i<text.length);if(showLabel&&i<text.length){const c=text[i],ang=angle+(i-(text.length-1)/2)*5.2*(bottom?-1:1);ch.setProperty(hmUI.prop.SRC,tone+(c==='%'?'arc_percent.png':c==='−'?'arc_dash.png':'arc_'+c+'.png'));ch.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-(c==='%'?16:c==='−'?8:14)/2),pos_y:Math.round(240+(bottom?159:-159)-(c==='%'?18:c==='−'?4:19)/2),angle:bottom?ang-180:ang})}})};
    let sensor;try{sensor=hmSensor.createSensor(id);const event=hmSensor.event.CHANGE;sensor.addEventListener(event,refresh);this._listeners.push({sensor,event,refresh})}catch(e){}this._gauges.push(refresh);refresh();
   };
-  // Sleep duration has no invented goal: progress is the firmware's native SLEEP binding.
-  const sleepScale=create(hmUI.widget.IMG_LEVEL,{x:40,y:40,image_array:Array.from({length:21},(_,i)=>'sleep_scale_'+i+'.png'),image_length:21,type:hmUI.data_type.SLEEP});
+  // Explicit image progress: native IMG_LEVEL SLEEP was absent on the user's watch.
+  const sleepScale=img('sleep_scale_0',40,40);
   const sleepCells=Array.from({length:5},()=>create(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,center_x:240,center_y:240,pos_x:233,pos_y:72,src:'arc_dash.png'}));
-  const sleepLowScale=create(hmUI.widget.IMG_LEVEL,{x:40,y:40,image_array:Array.from({length:21},(_,i)=>'amber_sleep_scale_'+i+'.png'),image_length:21,type:hmUI.data_type.SLEEP});
   let sleepSensor;try{sleepSensor=hmSensor.createSensor(hmSensor.id.SLEEP)}catch(e){}
   const refreshSleep=()=>{
    let minutes=NaN;try{sleepSensor.updateInfo();minutes=sleepSensor.getTotalTime()}catch(e){}
    const valid=typeof minutes==='number'&&Number.isFinite(minutes)&&minutes>0&&minutes<=1440;
    const low=valid&&minutes<300,tone=low?'amber_':'';
-   sleepScale.setProperty(hmUI.prop.VISIBLE,!low);sleepLowScale.setProperty(hmUI.prop.VISIBLE,low);
+   // Five hours is the user's warning boundary, not a claimed firmware sleep goal.
+   const level=valid?Math.max(1,Math.min(20,Math.floor(minutes/300*20))):0;
+   sleepScale.setProperty(hmUI.prop.SRC,tone+'sleep_scale_'+level+'.png');
    const text=valid?('0'+Math.floor(minutes/60)).slice(-2)+':'+('0'+Math.floor(minutes%60)).slice(-2):'−−:−−';
    sleepCells.forEach((cell,i)=>{
     const c=text[i],width=c===':'?8:c==='−'?8:14,height=c==='−'?4:19,angle=315+(i-2)*5.2;

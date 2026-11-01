@@ -54,17 +54,19 @@ for(const [v,target,prefix,level] of [[599,600,'',20],[600,600,'yellow_',20],[60
 }
 console.log('PASS: 9999/10000/10001-step boundaries, independent STEP/DISTANCE updates, fixed actual-km text, native calorie goal and normal/AOD colours.');
 // Sleep duration refreshes on resume and native minute events without a separate timer.
-const sleepStart=widgets.findIndex(w=>w.type==='IMG_LEVEL'&&w.props.type==='SLEEP');
+const sleepStart=widgets.findIndex(w=>w.type==='IMG'&&/^(aod_)?(amber_)?sleep_scale_/.test(w.props.src));
 assert(sleepStart>=0);const sleepChars=widgets.slice(sleepStart+2,sleepStart+12).filter(w=>w.props.show_level==='ONLY_NORMAL');assert.equal(sleepChars.length,5);
 const readSleep=()=>sleepChars.map(w=>w.props.src.replace('amber_','').replace('arc_','').replace('.png','')).join('|');
 for(const [minutes,text] of [[455,'0|7|colon|3|5'],[60,'0|1|colon|0|0'],[1440,'2|4|colon|0|0'],[0,'dash|dash|colon|dash|dash'],[NaN,'dash|dash|colon|dash|dash'],[1500,'dash|dash|colon|dash|dash'],[480,'0|8|colon|0|0']]){sensors.SLEEP.totalMinutes=minutes;sensors.TIME.events.MINUTEEND.forEach(f=>f());assert.equal(readSleep(),text)}
-assert.equal(widgets.filter(w=>w.type==='IMG_LEVEL'&&w.props.type==='SLEEP').length,4);
+assert.equal(widgets.filter(w=>w.type==='IMG'&&/^(aod_)?(amber_)?sleep_scale_/.test(w.props.src)).length,2);
 // User threshold: strictly below five hours; native SLEEP fill unchanged.
-for(const minutes of [1,299,300,301,455,0,NaN,1500,299,300]){
+for(const minutes of [1,15,60,150,275,299,300,301,455,1440,0,NaN,1500,299,300]){
  sensors.SLEEP.totalMinutes=minutes;sensors.TIME.events.MINUTEEND.forEach(f=>f());
  const low=Number.isFinite(minutes)&&minutes>0&&minutes<300;
- const scales=widgets.filter(w=>w.type==='IMG_LEVEL'&&w.props.type==='SLEEP');
- for(const w of scales)assert.equal(w.visible,w.props.image_array[0].includes('amber_')?low:!low);
+ const scales=widgets.filter(w=>w.type==='IMG'&&/^(aod_)?(amber_)?sleep_scale_/.test(w.props.src));
+ const valid=Number.isFinite(minutes)&&minutes>0&&minutes<=1440;
+ const level=valid?Math.max(1,Math.min(20,Math.floor(minutes/300*20))):0;
+ for(const w of scales){assert(w.visible);assert.equal(w.props.src,(w.props.show_level==='ONAL_AOD'?'aod_':'')+(low?'amber_':'')+'sleep_scale_'+level+'.png');}
  for(const w of sleepChars)assert.equal(w.props.src.startsWith('amber_'),low);
 }
 console.log('PASS: sleep amber below300min, neutral at300min, missing/invalid/reset, normal/AOD native scale visibility.');

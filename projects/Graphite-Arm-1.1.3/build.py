@@ -20,7 +20,8 @@ def tint(im,color,scale=False):
 colors={'red':(181,104,108),'green':(123,162,133),'blue':(110,145,183),'yellow':(177,158,112),'amber':(181,138,100)}
 for level in range(21):
  put('stress_scale_'+str(level),asset('heart_scale_'+str(level)))
- put('sleep_scale_'+str(level),asset('battery_scale_'+str(level)))
+ # Preserve original encoded normal/AOD frames without a second palette conversion.
+ for prefix in ['', 'aod_']:files['assets/'+prefix+'sleep_scale_'+str(level)+'.png']=files['assets/'+prefix+'battery_scale_'+str(level)+'.png']
  put('amber_sleep_scale_'+str(level),tint(asset('battery_scale_'+str(level)),colors['amber'],True))
  put('distance_scale_'+str(level),asset('steps_scale_'+str(level)))
  for tone,name in [('red','battery'),('green','distance'),('blue','stress'),('yellow','calories')]:put(tone+'_'+name+'_scale_'+str(level),tint(asset(name+'_scale_'+str(level)),colors[tone],True))
@@ -47,7 +48,7 @@ put('red_battery_percent',tint(asset('battery_percent'),colors['red']))
 for name,w,h in [('stress_scale0',104,64),('stress_scale1',98,36),('stress_scale2',64,30)]:files['assets/hit_'+name+'.png']=encode(Image.new('RGBA',(w,h)))
 preview=D/(B+'-preview.png')
 if preview.exists():files['assets/preview.png']=encode(Image.open(preview).convert('RGBA').resize((240,240),Image.Resampling.LANCZOS))
-m=json.loads(files['app.json']);m['app']['appName']='Graphite 2';m['i18n']['en-US']['appName']='Graphite 2';m['app']['version']={'code':15,'name':'1.1.3'};m['packageInfo']['timeStamp']=1793552400
+m=json.loads(files['app.json']);m['app']['appName']='Graphite 2';m['i18n']['en-US']['appName']='Graphite 2';m['app']['version']={'code':16,'name':'1.1.3'};m['packageInfo']['timeStamp']=1793552400
 mb=json.dumps(m,ensure_ascii=False).encode();(P/'app.json').write_bytes(mb);files['app.json']=mb
 files['app.js']=(P/'app.js').read_bytes()
 config=json.loads((P/'goal-config.json').read_text());goal=config['distance_scale_step_goal']
