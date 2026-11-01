@@ -48,7 +48,7 @@ put('red_battery_percent',tint(asset('battery_percent'),colors['red']))
 for name,w,h in [('stress_scale0',104,64),('stress_scale1',98,36),('stress_scale2',64,30)]:files['assets/hit_'+name+'.png']=encode(Image.new('RGBA',(w,h)))
 preview=D/(B+'-preview.png')
 if preview.exists():files['assets/preview.png']=encode(Image.open(preview).convert('RGBA').resize((240,240),Image.Resampling.LANCZOS))
-m=json.loads(files['app.json']);m['app']['appName']='Graphite 2';m['i18n']['en-US']['appName']='Graphite 2';m['app']['version']={'code':16,'name':'1.1.3'};m['packageInfo']['timeStamp']=1793552400
+m=json.loads(files['app.json']);m['app']['appName']='Graphite 2';m['i18n']['en-US']['appName']='Graphite 2';m['app']['version']={'code':17,'name':'1.1.3'};m['packageInfo']['timeStamp']=1793552400
 mb=json.dumps(m,ensure_ascii=False).encode();(P/'app.json').write_bytes(mb);files['app.json']=mb
 files['app.js']=(P/'app.js').read_bytes()
 config=json.loads((P/'goal-config.json').read_text());goal=config['distance_scale_step_goal']

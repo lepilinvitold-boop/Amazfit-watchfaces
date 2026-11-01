@@ -21,7 +21,7 @@ mod.module=DeviceRuntimeCore.WatchFace({
   const gauge=(name,id,read,ratio,angle,bottom=false,showLabel=true)=>{
    const w=img(name+'_scale_0',['battery','steps'].includes(name)?40:240,['battery','stress'].includes(name)?40:240);
    const chars=Array.from({length:6},()=>create(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,center_x:240,center_y:240,pos_x:236,pos_y:70,src:'arc_dash.png'}));
-   const refresh=()=>{let v=NaN,r=0;try{v=read(sensor);r=ratio(sensor,v)}catch(e){}const valid=Number.isFinite(v)&&v>=0;const tone=valid?(name==='battery'&&v<20?'red_':name==='steps'&&r>=1?'green_':name==='stress'&&v>=80?'blue_':''):'';const text=name==='stress'?(valid?String(Math.round(v)):'−'):(valid&&Number.isFinite(r)?String(Math.min(9999,Math.max(0,Math.round(r*100))))+'%':'−');const level=Number.isFinite(r)?Math.max(0,Math.min(20,Math.round(r*20))):0;w.setProperty(hmUI.prop.SRC,tone+name+'_scale_'+level+'.png');chars.forEach((ch,i)=>{ch.setProperty(hmUI.prop.VISIBLE,showLabel&&i<text.length);if(showLabel&&i<text.length){const c=text[i],ang=angle+(i-(text.length-1)/2)*5.2*(bottom?-1:1);ch.setProperty(hmUI.prop.SRC,tone+(c==='%'?'arc_percent.png':c==='−'?'arc_dash.png':'arc_'+c+'.png'));ch.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-(c==='%'?16:c==='−'?8:14)/2),pos_y:Math.round(240+(bottom?159:-159)-(c==='%'?18:c==='−'?4:19)/2),angle:bottom?ang-180:ang})}})};
+   const refresh=()=>{let v=NaN,r=0;try{v=read(sensor);r=ratio(sensor,v)}catch(e){}const valid=Number.isFinite(v)&&v>=0;const tone=valid?(name==='battery'&&v<20?'red_':name==='steps'&&r>=1?'green_':name==='stress'&&v>=80?'blue_':''):'';const text=name==='stress'?(valid?String(Math.round(v)):'−'):(valid&&Number.isFinite(r)?String(Math.min(9999,Math.max(0,Math.round(r*100))))+'%':'−');const level=Number.isFinite(r)?Math.max(0,Math.min(20,Math.round(r*20))):0;w.setProperty(hmUI.prop.SRC,tone+name+'_scale_'+level+'.png');chars.forEach((ch,i)=>{ch.setProperty(hmUI.prop.VISIBLE,showLabel&&i<text.length);if(showLabel&&i<text.length){const c=text[i],ang=angle+(i-(text.length-1)/2)*5.2*(bottom?-1:1);ch.setProperty(hmUI.prop.SRC,(c==='%'?'arc_percent.png':c==='−'?'arc_dash.png':'arc_'+c+'.png'));ch.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-(c==='%'?16:c==='−'?8:14)/2),pos_y:Math.round(240+(bottom?159:-159)-(c==='%'?18:c==='−'?4:19)/2),angle:bottom?ang-180:ang})}})};
    let sensor;try{sensor=hmSensor.createSensor(id);const event=hmSensor.event.CHANGE;sensor.addEventListener(event,refresh);this._listeners.push({sensor,event,refresh})}catch(e){}this._gauges.push(refresh);refresh();
   };
   // Explicit image progress: native IMG_LEVEL SLEEP was absent on the user's watch.
@@ -38,7 +38,7 @@ mod.module=DeviceRuntimeCore.WatchFace({
    const text=valid?('0'+Math.floor(minutes/60)).slice(-2)+':'+('0'+Math.floor(minutes%60)).slice(-2):'−−:−−';
    sleepCells.forEach((cell,i)=>{
     const c=text[i],width=c===':'?8:c==='−'?8:14,height=c==='−'?4:19,angle=315+(i-2)*5.2;
-    cell.setProperty(hmUI.prop.SRC,tone+'arc_'+(c===':'?'colon':c==='−'?'dash':c)+'.png');
+    cell.setProperty(hmUI.prop.SRC,'arc_'+(c===':'?'colon':c==='−'?'dash':c)+'.png');
     cell.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-width/2),pos_y:Math.round(81-height/2),angle});
    });
   };
@@ -71,7 +71,7 @@ mod.module=DeviceRuntimeCore.WatchFace({
      cell.setProperty(hmUI.prop.VISIBLE,i<tokens.length);
      if(i>=tokens.length)return;
      const t=tokens[i],a=angle-(offset+t.w/2)/159*180/Math.PI;
-     cell.setProperty(hmUI.prop.SRC,tone+'arc_'+t.key+'.png');
+     cell.setProperty(hmUI.prop.SRC,'arc_'+t.key+'.png');
      cell.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-t.w/2),pos_y:Math.round(399-t.h/2),angle:a-180});
      offset+=t.w;
     });

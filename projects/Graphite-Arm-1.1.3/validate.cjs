@@ -38,7 +38,7 @@ const readDistance=()=>distanceCells.filter(w=>w.visible).map(w=>w.props.src.rep
 for(const [steps,meters,prefix,level] of [[9999,9000,'',20],[10000,3500,'green_',20],[10001,5200,'green_',20],[5000,20000,'',10],[0,0,'',0],[NaN,3500,'',0],[10000,NaN,'',0],[10000,3500,'green_',20]]){
  sensors.STEP.current=steps;sensors.STEP.target=20000;sensors.DISTANCE.current=meters;sensors.DISTANCE.target=1000;fire('STEP');fire('DISTANCE');
  for(const w of distanceLayers)assert.equal(w.props.src,(w.props.show_level==='ONAL_AOD'?'aod_':'')+prefix+'distance_scale_'+level+'.png');
- const chars=widgets.slice(first,first+18).filter(w=>w.visible);assert(chars.every(w=>w.props.src.startsWith((w.props.show_level==='ONAL_AOD'?'aod_':'')+prefix+'arc_')));
+ const chars=widgets.slice(first,first+18).filter(w=>w.visible);assert(chars.every(w=>w.props.src.startsWith((w.props.show_level==='ONAL_AOD'?'aod_':'')+'arc_')));
  assert(chars.every(w=>w.props.angle>0&&w.props.angle<90&&w.props.pos_y>=389));
 }
 // A STEP change alone, without a distance event, must recolour both normal/AOD views.
@@ -50,7 +50,7 @@ for(const [v,target,prefix,level] of [[599,600,'',20],[600,600,'yellow_',20],[60
  Object.assign(sensors.CALORIE,{current:v,target});fire('CALORIE');
  const layers=widgets.filter(w=>w.type==='IMG'&&/^(aod_)?(yellow_)?calories_scale_/.test(w.props.src));assert.equal(layers.length,2);
  for(const w of layers)assert.equal(w.props.src,(w.props.show_level==='ONAL_AOD'?'aod_':'')+prefix+'calories_scale_'+level+'.png');
- const start=widgets.indexOf(layers[1])+1;const chars=widgets.slice(start,start+18).filter(w=>w.visible);assert(chars.every(w=>w.props.src.startsWith((w.props.show_level==='ONAL_AOD'?'aod_':'')+prefix+'arc_')));
+ const start=widgets.indexOf(layers[1])+1;const chars=widgets.slice(start,start+18).filter(w=>w.visible);assert(chars.every(w=>w.props.src.startsWith((w.props.show_level==='ONAL_AOD'?'aod_':'')+'arc_')));
 }
 console.log('PASS: 9999/10000/10001-step boundaries, independent STEP/DISTANCE updates, fixed actual-km text, native calorie goal and normal/AOD colours.');
 // Sleep duration refreshes on resume and native minute events without a separate timer.
@@ -67,8 +67,9 @@ for(const minutes of [1,15,60,150,275,299,300,301,455,1440,0,NaN,1500,299,300]){
  const valid=Number.isFinite(minutes)&&minutes>0&&minutes<=1440;
  const level=valid?Math.max(1,Math.min(20,Math.floor(minutes/300*20))):0;
  for(const w of scales){assert(w.visible);assert.equal(w.props.src,(w.props.show_level==='ONAL_AOD'?'aod_':'')+(low?'amber_':'')+'sleep_scale_'+level+'.png');}
- for(const w of sleepChars)assert.equal(w.props.src.startsWith('amber_'),low);
+ for(const w of sleepChars)assert(w.props.src.startsWith('arc_'));
 }
+for(const w of widgets.filter(w=>w.type==='IMG'&&w.visible&&/arc_/.test(w.props.src)))assert(/^(aod_)?arc_/.test(w.props.src),w.props.src);
 console.log('PASS: sleep amber below300min, neutral at300min, missing/invalid/reset, normal/AOD native scale visibility.');
 
 console.log('PASS: curved sleep HH:MM, missing/recovered data, native sleep progress and SLEEP taps; central battery binding retained.');
