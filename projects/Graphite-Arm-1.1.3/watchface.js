@@ -18,25 +18,89 @@ mod.module=DeviceRuntimeCore.WatchFace({
   const img=(src,x,y)=>create(hmUI.widget.IMG,{src:src+'.png',x,y});
   img('background',0,0);
   this._listeners=[];this._gauges=[];
-  const gauge=(name,id,read,ratio,angle,bottom=false)=>{
+  const gauge=(name,id,read,ratio,angle,bottom=false,showLabel=true)=>{
    const w=img(name+'_scale_0',['battery','steps'].includes(name)?40:240,['battery','stress'].includes(name)?40:240);
    const chars=Array.from({length:6},()=>create(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,center_x:240,center_y:240,pos_x:236,pos_y:70,src:'arc_dash.png'}));
-   const refresh=()=>{let v=NaN,r=0;try{v=read(sensor);r=ratio(sensor,v)}catch(e){}const valid=Number.isFinite(v)&&v>=0;const tone=valid?(name==='battery'&&v<20?'red_':name==='steps'&&r>=1?'green_':name==='stress'&&v>=80?'blue_':''):'';const text=name==='stress'?(valid?String(Math.round(v)):'−'):(valid&&Number.isFinite(r)?String(Math.min(9999,Math.max(0,Math.round(r*100))))+'%':'−');const level=Number.isFinite(r)?Math.max(0,Math.min(20,Math.round(r*20))):0;w.setProperty(hmUI.prop.SRC,tone+name+'_scale_'+level+'.png');chars.forEach((ch,i)=>{ch.setProperty(hmUI.prop.VISIBLE,i<text.length);if(i<text.length){const c=text[i],ang=angle+(i-(text.length-1)/2)*5.2*(bottom?-1:1);ch.setProperty(hmUI.prop.SRC,tone+(c==='%'?'arc_percent.png':c==='−'?'arc_dash.png':'arc_'+c+'.png'));ch.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-(c==='%'?16:c==='−'?8:14)/2),pos_y:Math.round(240+(bottom?159:-159)-(c==='%'?18:c==='−'?4:19)/2),angle:bottom?ang-180:ang})}})};
+   const refresh=()=>{let v=NaN,r=0;try{v=read(sensor);r=ratio(sensor,v)}catch(e){}const valid=Number.isFinite(v)&&v>=0;const tone=valid?(name==='battery'&&v<20?'red_':name==='steps'&&r>=1?'green_':name==='stress'&&v>=80?'blue_':''):'';const text=name==='stress'?(valid?String(Math.round(v)):'−'):(valid&&Number.isFinite(r)?String(Math.min(9999,Math.max(0,Math.round(r*100))))+'%':'−');const level=Number.isFinite(r)?Math.max(0,Math.min(20,Math.round(r*20))):0;w.setProperty(hmUI.prop.SRC,tone+name+'_scale_'+level+'.png');chars.forEach((ch,i)=>{ch.setProperty(hmUI.prop.VISIBLE,showLabel&&i<text.length);if(showLabel&&i<text.length){const c=text[i],ang=angle+(i-(text.length-1)/2)*5.2*(bottom?-1:1);ch.setProperty(hmUI.prop.SRC,tone+(c==='%'?'arc_percent.png':c==='−'?'arc_dash.png':'arc_'+c+'.png'));ch.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-(c==='%'?16:c==='−'?8:14)/2),pos_y:Math.round(240+(bottom?159:-159)-(c==='%'?18:c==='−'?4:19)/2),angle:bottom?ang-180:ang})}})};
    let sensor;try{sensor=hmSensor.createSensor(id);const event=hmSensor.event.CHANGE;sensor.addEventListener(event,refresh);this._listeners.push({sensor,event,refresh})}catch(e){}this._gauges.push(refresh);refresh();
   };
-  gauge('battery',hmSensor.id.BATTERY,s=>s.current,(s,v)=>v/100,315);
+  // Sleep duration has no invented goal: progress is the firmware's native SLEEP binding.
+  const sleepScale=create(hmUI.widget.IMG_LEVEL,{x:40,y:40,image_array:Array.from({length:21},(_,i)=>'sleep_scale_'+i+'.png'),image_length:21,type:hmUI.data_type.SLEEP});
+  const sleepCells=Array.from({length:5},()=>create(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,center_x:240,center_y:240,pos_x:233,pos_y:72,src:'arc_dash.png'}));
+  const sleepLowScale=create(hmUI.widget.IMG_LEVEL,{x:40,y:40,image_array:Array.from({length:21},(_,i)=>'amber_sleep_scale_'+i+'.png'),image_length:21,type:hmUI.data_type.SLEEP});
+  let sleepSensor;try{sleepSensor=hmSensor.createSensor(hmSensor.id.SLEEP)}catch(e){}
+  const refreshSleep=()=>{
+   let minutes=NaN;try{sleepSensor.updateInfo();minutes=sleepSensor.getTotalTime()}catch(e){}
+   const valid=typeof minutes==='number'&&Number.isFinite(minutes)&&minutes>0&&minutes<=1440;
+   const low=valid&&minutes<300,tone=low?'amber_':'';
+   sleepScale.setProperty(hmUI.prop.VISIBLE,!low);sleepLowScale.setProperty(hmUI.prop.VISIBLE,low);
+   const text=valid?('0'+Math.floor(minutes/60)).slice(-2)+':'+('0'+Math.floor(minutes%60)).slice(-2):'−−:−−';
+   sleepCells.forEach((cell,i)=>{
+    const c=text[i],width=c===':'?8:c==='−'?8:14,height=c==='−'?4:19,angle=315+(i-2)*5.2;
+    cell.setProperty(hmUI.prop.SRC,tone+'arc_'+(c===':'?'colon':c==='−'?'dash':c)+'.png');
+    cell.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-width/2),pos_y:Math.round(81-height/2),angle});
+   });
+  };
+  this._gauges.push(refreshSleep);refreshSleep();
   gauge('stress',hmSensor.id.STRESS,s=>s.current>0&&s.current<=100?s.current:NaN,(s,v)=>v/100,45);
-  gauge('steps',hmSensor.id.STEP,s=>s.current,(s,v)=>s.target>0?v/s.target:NaN,225,true);
-  // Always-visible empty track; the firmware chooses low/moderate/high fill.
-  img('calories_scale_0',240,240);
-  create(hmUI.widget.IMG_LEVEL,{x:240,y:240,image_array:['load_low.png','load_moderate.png','load_high.png'],image_length:3,type:hmUI.data_type.TRAINING_LOAD});
-  create(hmUI.widget.TEXT_IMG,{x:314,y:340,w:76,h:24,type:hmUI.data_type.TRAINING_LOAD,font_array:font('arc'),h_space:0,align_h:hmUI.align.CENTER_H,invalid_image:'arc_dash.png'});
+  // Distance-sector fill/achievement follows the user's 10000-step goal; text stays actual km.
+  const USER_STEP_GOAL=10000;
+  const metricGauge=(name,id,angle,unit,color)=>{
+   const scale=img(name+'_scale_0',name==='distance'?40:240,240);
+   const cells=Array.from({length:9},()=>create(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,center_x:240,center_y:240,pos_x:233,pos_y:390,src:'arc_dash.png'}));
+   const update=()=>{
+    let value=NaN,target=NaN;
+    try{value=sensor.current;target=sensor.target}catch(e){}
+    const valid=typeof value==='number'&&Number.isFinite(value)&&value>=0;
+    let ratio=NaN;
+    if(name==='distance'){
+     let steps;try{steps=stepSensor.current}catch(e){}
+     if(valid&&typeof steps==='number'&&Number.isFinite(steps)&&steps>=0)ratio=steps/USER_STEP_GOAL;
+    }else if(valid&&typeof target==='number'&&Number.isFinite(target)&&target>0)ratio=value/target;
+    const tone=Number.isFinite(ratio)&&ratio>=1?color+'_':'';
+    const level=Number.isFinite(ratio)?Math.max(0,Math.min(20,Math.round(ratio*20))):0;
+    scale.setProperty(hmUI.prop.SRC,tone+name+'_scale_'+level+'.png');
+    const label=valid?(name==='distance'?(Math.floor(value/10)/100).toFixed(2).replace('.',','):String(Math.floor(value))):'−';
+    const tokens=label.split('').map(c=>({key:c==='−'?'dash':c===','?'dot':c,w:c==='−'?8:c===','?4:14,h:c==='−'?4:19}));
+    if(valid)tokens.push({key:unit,w:unit==='km'?18:36,h:19});
+    // Same 25px arc digits as above; proportional arc-length spacing fits units.
+    const total=tokens.reduce((sum,t)=>sum+t.w,0);
+    let offset=-total/2;
+    cells.forEach((cell,i)=>{
+     cell.setProperty(hmUI.prop.VISIBLE,i<tokens.length);
+     if(i>=tokens.length)return;
+     const t=tokens[i],a=angle-(offset+t.w/2)/159*180/Math.PI;
+     cell.setProperty(hmUI.prop.SRC,tone+'arc_'+t.key+'.png');
+     cell.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-t.w/2),pos_y:Math.round(399-t.h/2),angle:a-180});
+     offset+=t.w;
+    });
+   };
+   let sensor,stepSensor;
+   const listen=id=>{const s=hmSensor.createSensor(id),event=hmSensor.event.CHANGE;s.addEventListener(event,update);this._listeners.push({sensor:s,event,refresh:update});return s};
+   try{sensor=listen(id)}catch(e){}
+   if(name==='distance')try{stepSensor=listen(hmSensor.id.STEP)}catch(e){}
+   this._gauges.push(update);update();
+  };
+  metricGauge('distance',hmSensor.id.DISTANCE,225,'km','green');
+  metricGauge('calories',hmSensor.id.CALORIE,135,'kcal','yellow');
   const num=(type,x,y,w,name='value',unit,alignment=hmUI.align.CENTER_H,spacing=0)=>{
    const p={x,y,w,h:36,type:hmUI.data_type[type],font_array:font(name),h_space:spacing,align_h:alignment,dot_image:name==='metric'?'metric_dot.png':'dot.png',negative_image:name==='forecast'?'forecast_minus.png':'minus.png'};
    if(unit)p.unit_en=p.unit_sc=p.unit_tc=unit+'.png';return create(hmUI.widget.TEXT_IMG,p);
   };
-  create(hmUI.widget.IMG_LEVEL,{x:220,y:76,image_array:Array.from({length:11},(_,i)=>'battery_icon_'+i+'.png'),image_length:11,type:hmUI.data_type.BATTERY});
-  num('BATTERY',204,107,72,'battery','battery_percent');
+  const batteryIconProps={x:220,y:76,image_length:11,type:hmUI.data_type.BATTERY};
+  const batteryIcon=create(hmUI.widget.IMG_LEVEL,{...batteryIconProps,image_array:Array.from({length:11},(_,i)=>'battery_icon_'+i+'.png')});
+  const batteryLowIcon=create(hmUI.widget.IMG_LEVEL,{...batteryIconProps,image_array:Array.from({length:11},(_,i)=>'red_battery_icon_'+i+'.png')});
+  const batteryValue=num('BATTERY',204,107,72,'battery','battery_percent');
+  const batteryLowValue=num('BATTERY',204,107,72,'red_battery','red_battery_percent');
+  let batterySensor;
+  const refreshBattery=()=>{
+   let value;try{value=batterySensor.current}catch(e){}
+   const low=typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<20;
+   batteryIcon.setProperty(hmUI.prop.VISIBLE,!low);batteryValue.setProperty(hmUI.prop.VISIBLE,!low);
+   batteryLowIcon.setProperty(hmUI.prop.VISIBLE,low);batteryLowValue.setProperty(hmUI.prop.VISIBLE,low);
+  };
+  try{batterySensor=hmSensor.createSensor(hmSensor.id.BATTERY);const event=hmSensor.event.CHANGE;batterySensor.addEventListener(event,refreshBattery);this._listeners.push({sensor:batterySensor,event,refresh:refreshBattery})}catch(e){}
+  this._gauges.push(refreshBattery);refreshBattery();
   img('walk_icon',100,204);num('STEP',60,237,100,'step');
   img('heart_icon',358,204);const heart=num('HEART',335,237,70);const missing=img('minus',363,243);
   create(hmUI.widget.IMG_LEVEL,{x:227,y:319,image_array:Array.from({length:29},(_,i)=>'weather_'+i+'.png'),image_length:29,type:hmUI.data_type.WEATHER_CURRENT});
@@ -59,7 +123,7 @@ mod.module=DeviceRuntimeCore.WatchFace({
    if(date!==previousDate){dateCells.forEach((w,i)=>w.setProperty(hmUI.prop.SRC,'dt_'+i+'_'+date.charCodeAt(i)+'.png'));previousDate=date}
   };
   refreshClock();this._gauges.push(refreshClock);
-  if(clock){const event=clock.event?clock.event.MINUTEEND:hmSensor.event.MINUTEEND;clock.addEventListener(event,refreshClock);this._listeners.push({sensor:clock,event,refresh:refreshClock})}
+  if(clock){const event=clock.event?clock.event.MINUTEEND:hmSensor.event.MINUTEEND;clock.addEventListener(event,refreshClock);this._listeners.push({sensor:clock,event,refresh:refreshClock});clock.addEventListener(event,refreshSleep);this._listeners.push({sensor:clock,event,refresh:refreshSleep})}
   const pointer={hour_centerX:240,hour_centerY:240,hour_posX:36,hour_posY:232,hour_path:'hour.png',minute_centerX:240,minute_centerY:240,minute_posX:36,minute_posY:232,minute_path:'minute.png',second_centerX:240,second_centerY:240,second_posX:6,second_posY:222,second_path:'second.png'};
   // Native H/M hands plus a fractional-angle second image in the active view.
   this._smoothSupported=typeof timer!=='undefined'&&typeof timer.createTimer==='function';
@@ -82,7 +146,7 @@ mod.module=DeviceRuntimeCore.WatchFace({
   try{this._heart=hmSensor.createSensor(hmSensor.id.HEART);this._event=hmSensor.event.LAST;this._callback=refresh;this._heart.addEventListener(this._event,refresh)}catch(e){}refresh();
   hmUI.createWidget(hmUI.widget.WIDGET_DELEGATE,{resume_call:()=>{refresh();this._gauges.forEach(f=>f());this._startSecond()},pause_call:()=>{this._stopSecond()}});
   taps.forEach(([name,x,y,w,h,url])=>{
-   const metric=name==='steps'?'STEP':name.startsWith('battery_scale')?'BATTERY':name.startsWith('distance')?'DISTANCE':name.startsWith('calories')?'TRAINING_LOAD':null;
+   const metric=name==='steps'?'STEP':name.startsWith('battery_scale')?'SLEEP':name.startsWith('distance')?'DISTANCE':name.startsWith('calories')?'CAL':null;
    const hit=metric?hmUI.createWidget(hmUI.widget.IMG_CLICK,{x,y,w,h,src:'hit_'+name+'.png',type:hmUI.data_type[metric],show_level:normal,enable:true}):hmUI.createWidget(hmUI.widget.BUTTON,{x,y,w,h,text:'',normal_src:'hit_'+name+'.png',press_src:'hit_'+name+'.png',show_level:normal,enable:true,click_func:()=>hmApp.startApp({url,native:true})});hit.setEnable(true);
   });
  },onInit(){this.init_view()},build(){this.init_view()},onDestroy(){if(this._stopSecond)this._stopSecond();if(this._heart)this._heart.removeEventListener(this._event,this._callback);(this._listeners||[]).forEach(x=>x.sensor.removeEventListener(x.event,x.refresh))}
