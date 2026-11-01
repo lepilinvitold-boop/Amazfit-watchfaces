@@ -1,0 +1,86 @@
+try { (()=>{
+const app=__$$hmAppManager$$__.currentApp,mod=app.current;
+const font=n=>Array.from({length:10},(_,i)=>n+'_'+i+'.png');
+const taps=[["battery",190,60,100,100,"Settings_batteryManagerScreen"],["weather",190,320,100,105,"WeatherScreen"],["heart",320,190,100,100,"heart_app_Screen"],["steps",60,190,100,100,"activityAppScreen"],["date",170,272,140,36,"ScheduleCalScreen"],["alarm",160,160,53,54,"AlarmInfoScreen"],["stopwatch",213,175,54,40,"StopWatchScreen"],["countdown",267,160,53,54,"CountdownAppScreen"],["battery_scale0",56,122,104,64,"activityAppScreen"],["battery_scale1",80,86,98,36,"activityAppScreen"],["battery_scale2",120,56,64,30,"activityAppScreen"],["distance0",56,294,104,50,"activityAppScreen"],["distance1",80,344,98,40,"activityAppScreen"],["distance2",120,384,64,44,"activityAppScreen"],["calories0",320,294,104,50,"activityAppScreen"],["calories1",302,344,98,40,"activityAppScreen"],["calories2",296,384,64,44,"activityAppScreen"]];
+mod.module=DeviceRuntimeCore.WatchFace({
+ init_view(){
+  if(this._built)return;this._built=true;
+  const normal=hmUI.show_level.ONLY_NORMAL,aod=hmUI.show_level.ONAL_AOD;
+  const dim=v=>typeof v==='string'&&v.endsWith('.png')?'aod_'+v:Array.isArray(v)?v.map(dim):v;
+  const create=(type,p)=>{
+   const w=hmUI.createWidget(type,{...p,enable:false,show_level:normal});
+   const ap={...p,enable:false,show_level:aod};Object.keys(p).forEach(k=>ap[k]=dim(p[k]));
+   if(type===hmUI.widget.TIME_POINTER)Object.keys(ap).filter(k=>k.startsWith('second_')).forEach(k=>delete ap[k]);
+   const aw=hmUI.createWidget(type,ap);
+   return {setProperty(k,v){w.setProperty(k,v);aw.setProperty(k,k===hmUI.prop.SRC?dim(v):k===hmUI.prop.MORE?Object.fromEntries(Object.entries(v).map(([a,b])=>[a,dim(b)])):v)}};
+  };
+  const img=(src,x,y)=>create(hmUI.widget.IMG,{src:src+'.png',x,y});
+  img('background',0,0);
+  this._listeners=[];this._gauges=[];
+  const gauge=(name,id,read,ratio,angle,bottom=false)=>{
+   const w=img(name+'_scale_0',['battery','steps'].includes(name)?40:240,['battery','heart'].includes(name)?40:240);
+   const chars=Array.from({length:6},()=>create(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,center_x:240,center_y:240,pos_x:236,pos_y:70,src:'arc_dash.png'}));
+   const refresh=()=>{let v=NaN,r=0;try{v=read(sensor);r=ratio(sensor,v)}catch(e){}const valid=Number.isFinite(v)&&v>=0;const text=name==='heart'?(valid?String(Math.round(v)):'−'):(valid&&Number.isFinite(r)?String(Math.min(9999,Math.max(0,Math.round(r*100))))+'%':'−');const level=Number.isFinite(r)?Math.max(0,Math.min(20,Math.round(r*20))):0;w.setProperty(hmUI.prop.SRC,name+'_scale_'+level+'.png');chars.forEach((ch,i)=>{ch.setProperty(hmUI.prop.VISIBLE,i<text.length);if(i<text.length){const c=text[i],ang=angle+(i-(text.length-1)/2)*5.2*(bottom?-1:1);ch.setProperty(hmUI.prop.SRC,c==='%'?'arc_percent.png':c==='−'?'arc_dash.png':'arc_'+c+'.png');ch.setProperty(hmUI.prop.MORE,{pos_x:Math.round(240-(c==='%'?16:c==='−'?8:14)/2),pos_y:Math.round(240+(bottom?159:-159)-(c==='%'?18:c==='−'?4:19)/2),angle:bottom?ang-180:ang})}})};
+   let sensor;try{sensor=hmSensor.createSensor(id);const event=name==='heart'?hmSensor.event.LAST:hmSensor.event.CHANGE;sensor.addEventListener(event,refresh);this._listeners.push({sensor,event,refresh})}catch(e){}this._gauges.push(refresh);refresh();
+  };
+  gauge('battery',hmSensor.id.BATTERY,s=>s.current,(s,v)=>v/100,315);
+  gauge('heart',hmSensor.id.HEART,s=>s.last>0&&s.last<=255?s.last:NaN,(s,v)=>(v-30)/154,45);
+  gauge('steps',hmSensor.id.STEP,s=>s.current,(s,v)=>s.target>0?v/s.target:NaN,225,true);
+  gauge('calories',hmSensor.id.CALORIE,s=>s.current,(s,v)=>s.target>0?v/s.target:NaN,135,true);
+  const num=(type,x,y,w,name='value',unit,alignment=hmUI.align.CENTER_H,spacing=0)=>{
+   const p={x,y,w,h:36,type:hmUI.data_type[type],font_array:font(name),h_space:spacing,align_h:alignment,dot_image:name==='metric'?'metric_dot.png':'dot.png',negative_image:name==='forecast'?'forecast_minus.png':'minus.png'};
+   if(unit)p.unit_en=p.unit_sc=p.unit_tc=unit+'.png';return create(hmUI.widget.TEXT_IMG,p);
+  };
+  create(hmUI.widget.IMG_LEVEL,{x:220,y:76,image_array:Array.from({length:11},(_,i)=>'battery_icon_'+i+'.png'),image_length:11,type:hmUI.data_type.BATTERY});
+  num('BATTERY',204,107,72,'battery','battery_percent');
+  img('walk_icon',100,204);num('STEP',60,237,100,'step');
+  img('heart_icon',358,204);const heart=num('HEART',335,237,70);const missing=img('minus',363,243);
+  create(hmUI.widget.IMG_LEVEL,{x:227,y:319,image_array:Array.from({length:29},(_,i)=>'weather_'+i+'.png'),image_length:29,type:hmUI.data_type.WEATHER_CURRENT});
+  num('WEATHER_CURRENT',194,348,92,'value','degree');
+  num('WEATHER_LOW',195,381,38,'forecast','forecast_degree',hmUI.align.RIGHT,-1);img('range_dash',235,386);
+  num('WEATHER_HIGH',247,381,38,'forecast','forecast_degree',hmUI.align.LEFT,-1);
+  const layout={"normal_time":[[162,154],[179,165],[192,170],[206,172],[226,172],[240,170],[253,165],[270,154]],"aod_time":[[183,166],[202,172],[216,173],[230,172],[249,166]],"date":[[158,284],[171,274],[185,267],[200,263],[216,261],[232,263],[247,267],[261,274],[274,284]]};
+  const createClock=(family,positions,pattern,show)=>positions.map(([x,y],i)=>hmUI.createWidget(hmUI.widget.IMG,{x,y,src:(show===aod?'aod_':'')+family+'_'+i+'_'+pattern.charCodeAt(i)+'.png',show_level:show,enable:false}));
+  const normalClock=createClock('nt',layout.normal_time,'00:00:00',normal),aodClock=createClock('at',layout.aod_time,'00:00',aod);
+  const dateCells=layout.date.map(([x,y],i)=>img('dt_'+i+'_'+('01.11 ВСК'.charCodeAt(i)),x,y));
+  const pad=n=>('0'+n).slice(-2);let clock;try{clock=hmSensor.createSensor(hmSensor.id.TIME)}catch(e){}
+  let previousTime='',previousDate='';
+  const refreshClock=()=>{
+   const now=new Date();const pick=(key,fallback,min,max)=>{let v;try{v=clock[key]}catch(e){}return typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max?v:fallback};
+   const h=pick('hour',now.getHours(),0,23),m=pick('minute',now.getMinutes(),0,59),s=pick('second',now.getSeconds(),0,59);
+   const label=pad(h)+':'+pad(m)+':'+pad(s);
+   if(label!==previousTime){normalClock.forEach((w,i)=>w.setProperty(hmUI.prop.SRC,'nt_'+i+'_'+label.charCodeAt(i)+'.png'));aodClock.forEach((w,i)=>w.setProperty(hmUI.prop.SRC,'aod_at_'+i+'_'+label.charCodeAt(i)+'.png'));previousTime=label}
+   const day=pick('day',now.getDate(),1,31),month=pick('month',now.getMonth()+1,1,12),week=pick('week',now.getDay()||7,1,7);
+   const wd=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВСК'][week-1];const date=pad(day)+'.'+pad(month)+' '+wd+(wd.length===2?' ':'');
+   if(date!==previousDate){dateCells.forEach((w,i)=>w.setProperty(hmUI.prop.SRC,'dt_'+i+'_'+date.charCodeAt(i)+'.png'));previousDate=date}
+  };
+  refreshClock();this._gauges.push(refreshClock);
+  if(clock){const event=clock.event?clock.event.MINUTEEND:hmSensor.event.MINUTEEND;clock.addEventListener(event,refreshClock);this._listeners.push({sensor:clock,event,refresh:refreshClock})}
+  const pointer={hour_centerX:240,hour_centerY:240,hour_posX:36,hour_posY:232,hour_path:'hour.png',minute_centerX:240,minute_centerY:240,minute_posX:36,minute_posY:232,minute_path:'minute.png',second_centerX:240,second_centerY:240,second_posX:6,second_posY:222,second_path:'second.png'};
+  // Native H/M hands plus a fractional-angle second image in the active view.
+  this._smoothSupported=typeof timer!=='undefined'&&typeof timer.createTimer==='function';
+  if(this._smoothSupported)Object.keys(pointer).filter(k=>k.startsWith('second_')).forEach(k=>delete pointer[k]);
+  const hands=create(hmUI.widget.TIME_POINTER,pointer);
+  let handsVisible=true,secondHand;
+  this._startSecond=()=>{};this._stopSecond=()=>{};
+  if(this._smoothSupported){
+   const second=hmUI.createWidget(hmUI.widget.IMG,{x:0,y:0,w:480,h:480,center_x:240,center_y:240,pos_x:234,pos_y:18,src:'second.png',angle:0,show_level:normal,enable:false});
+   secondHand=second;
+   const update=()=>{second.setProperty(hmUI.prop.ANGLE,(Date.now()%60000)*.006);refreshClock()};
+   this._stopSecond=()=>{if(this._secondTimer!==undefined){timer.stopTimer(this._secondTimer);this._secondTimer=undefined}};
+   this._startSecond=()=>{this._stopSecond();update();this._secondTimer=timer.createTimer(50,50,update,{})};
+   this._startSecond();
+  }
+  img('cap',227,227);
+  hmUI.createWidget(hmUI.widget.BUTTON,{x:220,y:220,w:40,h:40,text:'',normal_src:'hit_axis.png',press_src:'hit_axis.png',show_level:normal,enable:true,click_func:()=>{handsVisible=!handsVisible;hands.setProperty(hmUI.prop.VISIBLE,handsVisible);if(secondHand)secondHand.setProperty(hmUI.prop.VISIBLE,handsVisible)}}).setEnable(true);
+
+  const refresh=()=>{let value;try{value=this._heart.last}catch(e){}const valid=typeof value==='number'&&Number.isFinite(value)&&value>0&&value<=255;heart.setProperty(hmUI.prop.VISIBLE,valid);missing.setProperty(hmUI.prop.VISIBLE,!valid)};
+  try{this._heart=hmSensor.createSensor(hmSensor.id.HEART);this._event=hmSensor.event.LAST;this._callback=refresh;this._heart.addEventListener(this._event,refresh)}catch(e){}refresh();
+  hmUI.createWidget(hmUI.widget.WIDGET_DELEGATE,{resume_call:()=>{refresh();this._gauges.forEach(f=>f());this._startSecond()},pause_call:()=>{this._stopSecond()}});
+  taps.forEach(([name,x,y,w,h,url])=>{
+   const metric=name==='steps'?'STEP':name.startsWith('battery_scale')?'BATTERY':name.startsWith('distance')?'DISTANCE':name.startsWith('calories')?'CAL':null;
+   const hit=metric?hmUI.createWidget(hmUI.widget.IMG_CLICK,{x,y,w,h,src:'hit_'+name+'.png',type:hmUI.data_type[metric],show_level:normal,enable:true}):hmUI.createWidget(hmUI.widget.BUTTON,{x,y,w,h,text:'',normal_src:'hit_'+name+'.png',press_src:'hit_'+name+'.png',show_level:normal,enable:true,click_func:()=>hmApp.startApp({url,native:true})});hit.setEnable(true);
+  });
+ },onInit(){this.init_view()},build(){this.init_view()},onDestroy(){if(this._stopSecond)this._stopSecond();if(this._heart)this._heart.removeEventListener(this._event,this._callback);(this._listeners||[]).forEach(x=>x.sensor.removeEventListener(x.event,x.refresh))}
+});
+})();}catch(e){console.log('Graphite Arm error',e);}
