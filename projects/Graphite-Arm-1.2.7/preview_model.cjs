@@ -1,0 +1,4 @@
+const fs=require('fs');let s=fs.readFileSync('projects/Graphite-Arm-1.2.7/validate.cjs','utf8');s=s.slice(0,s.indexOf('vm.runInNewContext'));
+s+=`Object.assign(sensors,{BATTERY:{current:97},STEP:{current:60,target:10000},DISTANCE:{current:40,target:999999},FAT_BURRING:{current:12,target:90},CALORIE:{current:7,target:600},STRESS:{current:80},SLEEP:{updateInfo(){},getTotalTime(){return 275}},HEART:{last:84},TIME:{hour:15,minute:47,second:44,day:3,month:11,week:2}});for(const s of Object.values(sensors)){s.events={};s.addEventListener=function(e,f){(this.events[e]??=[]).push(f)};s.removeEventListener=function(){}};
+vm.runInNewContext(fs.readFileSync(root+'/watchface/index.js','utf8'),sandbox);face.onInit();fs.writeFileSync('/tmp/widgets.json',JSON.stringify(widgets));`;
+require('vm').runInThisContext('(function(require,process){'+s+'})')(require,process);
