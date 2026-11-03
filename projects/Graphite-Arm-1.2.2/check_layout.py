@@ -135,12 +135,10 @@ for kind,prefixes in [('time',['alarm','stopwatch','countdown']),('date',['date'
  frame_data[kind]=(panel,cover)
 # No panel background edits outside the two approved patches; preserve bezel/circles exactly.
 import zipfile,io
-with zipfile.ZipFile(ROOT/'dist/Graphite-2-v1.1.7-RU-Balance2.zpk') as z:
- with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as old:
-  patch=np.array(Image.open(P/'panel_patch_mask.png'))>0
-  for pre in ['', 'aod_']:
-   a=np.array(ns['decode'](old.read('assets/'+pre+'background.png')));b=np.array(ns['decode']((assets/(pre+'background22.png')).read_bytes()))
-   assert np.array_equal(a[~patch],b[~patch]),(pre,'unrelated background changed')
+patch=np.array(Image.open(P/'panel_patch_mask.png'))>0
+for pre in ['', 'aod_']:
+ a=np.array(ns['decode']((P/'test-baselines'/(pre+'background.bin')).read_bytes()));b=np.array(ns['decode']((assets/(pre+'background22.png')).read_bytes()))
+ assert np.array_equal(a[~patch],b[~patch]),(pre,'unrelated background changed')
 for family,key,kind in [('nt','normal_time','time'),('at','aod_time','time'),('dt','date','date')]:
  panel,cover=frame_data[kind];unions=[]
  for i,(px,py) in enumerate(layout[key]):
@@ -155,7 +153,7 @@ for family,key,kind in [('nt','normal_time','time'),('at','aod_time','time'),('d
 print('PASS: enlarged panels/glyphs clear circles/axis,remain inside correct taps,and untouched background pixels match accepted1.1.7.')
 
 # No loss of actual scale tap coverage compared with the accepted version.
-old_raw=(P.parent/'Graphite-Arm-1.1.7/watchface.js').read_text().replace('calories','calories22');old_rows=json.loads(re.search(r'const taps=(\[.*?\]);',old_raw).group(1));old_rows += [['stress_scale0',320,122,104,64,'StressHomeScreen'],['stress_scale1',302,86,98,36,'StressHomeScreen'],['stress_scale2',296,56,64,30,'StressHomeScreen']]
+old_rows=json.loads((P/'test-baselines/accepted-taps.json').read_text())
 for name,prefix,ox,oy in [('fatburn22','battery_scale',40,40),('stress','stress_scale',240,40),('distance','distance',40,240),('calories22','calories22',240,240)]:
  cover=np.zeros((480,480),bool)
  for nm,tx,ty,tw,th,url in all_rows:
@@ -169,14 +167,12 @@ for name,prefix,ox,oy in [('fatburn22','battery_scale',40,40),('stress','stress_
 print('PASS: all84 actual gauge frames retain accepted tap coverage after panel enlargement.')
 
 # Counterweight change is confined to rows behind the unchanged pivot.
-with zipfile.ZipFile(ROOT/'dist/Graphite-2-8-v1.1.8-RU-Balance2.zpk') as z:
- with zipfile.ZipFile(io.BytesIO(z.read('device.zip'))) as old:
-  for pre in ['', 'aod_']:
-   for name in ['hour','minute']:
-    before=old.read('assets/'+pre+name+'.png');after=(assets/(pre+name+'.png')).read_bytes();stride=int.from_bytes(before[12:14],'little')
-    assert before[:1088+232*stride]==after[:1088+232*stride],(pre,name,'blade changed')
-    ink=np.array(ns['decode'](after))[:,:,3]>64
-    assert np.where(ink)[0].max()==255,(pre,name,'tail length')
+for pre in ['', 'aod_']:
+ for name in ['hour','minute']:
+  before=(P/'test-baselines'/(pre+name+'.bin')).read_bytes();after=(assets/(pre+name+'.png')).read_bytes();stride=int.from_bytes(before[12:14],'little')
+  assert before[:1088+232*stride]==after[:1088+232*stride],(pre,name,'blade changed')
+  ink=np.array(ns['decode'](after))[:,:,3]>64
+  assert np.where(ink)[0].max()==255,(pre,name,'tail length')
 print('PASS: original palettes and leading hand pixels unchanged; both normal/AOD tails32→24px.')
 for pre in ['', 'aod_']:
  for name in ['km','min']:

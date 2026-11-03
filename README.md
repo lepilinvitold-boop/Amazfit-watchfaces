@@ -1,3 +1,7 @@
+## Текущая Graphite 2
+
+Принята пользователем 3 ноября 2026: **Graphite 2 (0),1.2.2code26**. Исходники: projects/Graphite-Arm-1.2.2. Следующие правки начинать только от неё. [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/graphite-arm-1.2.2/dist/Graphite-2-0-v1.2.2-zepp-qr.png). Регламент: docs/GRAPHITE-2-CHECKLIST.md.
+
 # Циферблаты для Amazfit Balance 2
 
 Доступны версии: Owl Steel 0.94.6, SDDC639Ru 2.7.1 (Lime) и SDDC639Ru 2.6.1 (красная секундная стрелка).
