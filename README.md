@@ -1,6 +1,10 @@
-## Текущая Graphite 2
+## Graphite 2 — сохранённые версии (4 ноября 2026)
 
-Принята пользователем 3 ноября 2026: **Graphite 2 (0),1.2.2code26**. Исходники: projects/Graphite-Arm-1.2.2. Следующие правки начинать только от неё. [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/graphite-arm-1.2.2/dist/Graphite-2-0-v1.2.2-zepp-qr.png). Регламент: docs/GRAPHITE-2-CHECKLIST.md.
+По команде пользователя сохранены исходная рабочая1.2.2 и последняя1.2.9(code33, appId10623141). Неудачные1.2.3–1.2.8: установочные пакеты, QR, превью и каталоги исходников удалены из актуальных деревьев веток. История Git и имена старых веток остаются; эти ветки указывают на очищенное дерево.
+
+[QR1.2.9](dist/Graphite-2-v1.2.9-zepp-qr.png) · [ZPK1.2.9](dist/Graphite-2-v1.2.9-RU-Balance2.zpk) · [Превью](dist/Graphite-2-v1.2.9-preview.png) · [QR1.2.2](dist/Graphite-2-0-v1.2.2-zepp-qr.png)
+
+Пакеты1.2.2/1.2.9 сохранены побайтно. Остальные семейства и их зависимости не изменены. Регламент: docs/GRAPHITE-2-CHECKLIST.md. Программные проверки1.2.9 выполнены; подтверждения на часах пока нет.
 
 # Циферблаты для Amazfit Balance 2
 
