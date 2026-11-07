@@ -4,7 +4,7 @@
 
 | Версия | Установка | Скачать |
 | --- | --- | --- |
-| [Graphite 3 v1.0.3](projects/Graphite-3) | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.3-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.3-RU-Balance2.zpk) |
+| [Graphite 3 v1.0.4](projects/Graphite-3) | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.4-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.4-RU-Balance2.zpk) |
 | Amazfit Green RU 1.0.3: надписи по дуге, блокировка тапов, исправленные шрифты и стрелки | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.3-zepp-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Amazfit-Green-RU-v1.0.3-Balance2.zpk) |
 | Owl Steel 0.94.7.1: внутренний ободок и панель даты, полный АОД | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7.1-install-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7.1-RU-Balance2.zpk) |
 | Owl Steel 0.94.7: полный приглушённый АОД, без секунд в АОД | [QR](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7-install-qr.png) | [ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Owl-Steel-v0.94.7-RU-Balance2.zpk) |
