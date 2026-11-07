@@ -1,10 +1,10 @@
-# Graphite 3 v1.0.9
+# Graphite 3 v1.0.10
 
 Циферблат для Amazfit Balance 2. Оригинальный безель Heiyan и четыре торца шасси на основе нижнего. Нижний торец заходит под цифру 6. Дуги шкал укорочены, сегменты вынесены наружу относительно подписей. Прогноз использует разделитель «/» между минимумом и максимумом.
 
-[Скачать ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.9-RU-Balance2.zpk)
+[Скачать ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.10-RU-Balance2.zpk)
 
-![Установочный QR Graphite 3](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.9-zepp-qr.png)
+![Установочный QR Graphite 3](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.10-zepp-qr.png)
 
 Откройте QR на планшете и отсканируйте его в Zepp в режиме разработчика на телефоне, подключённом к часам.
 
@@ -15,3 +15,5 @@
 Строка прогноза поднята внутрь круга, палитра выходных исправлена для часов.
 
 Уточнены безель, сегменты и фон ниш. Пульс и шаги отцентрированы, обе строки температуры подняты.
+
+Торцы уходят под безель. Сглаженные сегменты укорочены и целиком находятся внутри обода.
