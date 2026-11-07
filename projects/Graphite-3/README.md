@@ -1,10 +1,10 @@
-# Graphite 3 v1.0.0
+# Graphite 3 v1.0.2
 
-Циферблат для Amazfit Balance 2 с гранёным безелем, четырьмя одинаковыми торцами шасси и разделителем «/» между минимумом и максимумом прогноза.
+Циферблат для Amazfit Balance 2. Оригинальный безель Heiyan и четыре торца шасси на основе нижнего. Прогноз использует разделитель «/» между минимумом и максимумом.
 
-[Скачать ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.0-RU-Balance2.zpk)
+[Скачать ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.2-RU-Balance2.zpk)
 
-![Установочный QR Graphite 3](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.0-zepp-qr.png)
+![Установочный QR Graphite 3](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.2-zepp-qr.png)
 
 Откройте QR на планшете и отсканируйте его в Zepp в режиме разработчика на телефоне, подключённом к часам.
 
