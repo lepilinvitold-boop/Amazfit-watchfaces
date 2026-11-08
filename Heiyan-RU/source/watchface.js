@@ -20,7 +20,7 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
     const glyph = (mode, name, char) => (mode === idle ? 'aod_' : '') + name + '_' + char.charCodeAt(0) + '.png';
     const img = (src, x, y, mode) => widget('IMG', {src, x, y}, mode);
     const value = (type, name, x, y, w, mode, unit, signed = false) => {
-      const options = {x, y, w, h: 32, align_h: hmUI.align.CENTER_H,
+      const options = {x, y, w, h: name === 'digital' ? 38 : 32, align_h: hmUI.align.CENTER_H,
         type: hmUI.data_type[type], padding: false, h_space: 0,
         font_array: Array.from('0123456789', c => glyph(mode,name, c))};
       if (unit) options.unit_sc = options.unit_tc = options.unit_en = glyph(mode,name, unit);
@@ -41,7 +41,7 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       widget('IMG_LEVEL', {x:221,y:60,w:38,h:35, image_length:29,
         image_array:Array.from({length:29},(_,i)=>(mode === idle ? 'aod_' : '')+'weather_'+i+'.png'),
         type:hmUI.data_type.WEATHER_CURRENT}, mode);
-      value('WEATHER_CURRENT','current',196,93,88,mode,'°',true);
+      value('WEATHER_CURRENT','digital',196,90,88,mode,'°',true);
       value('WEATHER_LOW','small',184,137,53,mode,'°',true);
       value('WEATHER_HIGH','small',243,137,53,mode,'°',true);
       label('/',234,135,12,18,mode);
@@ -49,15 +49,16 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       value('BATTERY','value',317,127,66,mode);
       value('CAL','value',104,310,62,mode);
       stressLabels.push(label('—',314,310,66,20,mode));
-      value('STEP','steps',185,340,110,mode);
+      value('STEP','digital',185,337,110,mode);
       value('DISTANCE','small',184,380,112,mode);
-      const date = label('',59,226,126,30,mode);
-      const redDate = label('',59,226,126,30,mode,mode === idle ? 0x652628 : 0xed4f52);
-      const time = label('',295,224,132,35,mode);
+      const cells = (x,count) => Array.from({length:count},(_,i)=>
+        img(glyph(mode,'digital',' '),x+22*i,225,mode));
+      const date = cells(57,6);
+      const time = cells(306,5);
       const prefix = mode === idle ? 'aod_' : '';
       img(prefix+'alarm.png',226,195,mode);
       widget('IMG_STATUS',{x:226,y:195,src:prefix+'alarm_on.png',type:hmUI.system_status.CLOCK},mode);
-      rows.push({date,redDate,time});
+      rows.push({mode,date,time});
       for (const [part,src,px,py] of [['hour','0064',37,250],['minute','0065',37,247]]) {
         widget('TIME_POINTER',{
           [part+'_path']:(mode === idle ? 'aod_'+Number(src) : src)+'.png',
@@ -85,6 +86,7 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
         second_posX:36,second_posY:248},active);
     const pad = number => ('0'+number).slice(-2);
     let lastSecond;
+    let lastDisplay;
     let clock;
     try { clock = hmSensor.createSensor(hmSensor.id.TIME); } catch (error) {}
     const update = () => {
@@ -94,16 +96,17 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       if (second === lastSecond) return;
       lastSecond = second;
       const now = new Date(stamp);
-      const week = ['вск','пнд','втр','срд','чтв','птн','сбт'];
+      const week = ['ВСК','ПНД','ВТР','СРД','ЧТВ','ПТН','СБТ'];
       const hhmm = pad(clock ? clock.hour : now.getHours())+':'+pad(clock ? clock.minute : now.getMinutes());
       const weekday = (clock ? clock.week : now.getDay()) % 7;
+      const text = (' '+(clock ? clock.day : now.getDate())+' '+week[weekday]).slice(-6);
+      if (lastDisplay === text+hhmm) return;
+      lastDisplay = text+hhmm;
       for (const row of rows) {
-        const weekend = weekday === 0 || weekday === 6;
-        const text = (clock ? clock.day : now.getDate())+' '+week[weekday];
-        row.date.setProperty(hmUI.prop.VISIBLE,!weekend);
-        row.redDate.setProperty(hmUI.prop.VISIBLE,weekend);
-        (weekend ? row.redDate : row.date).setProperty(hmUI.prop.TEXT,text);
-        row.time.setProperty(hmUI.prop.TEXT,hhmm);
+        const set = (cells, chars, name) => cells.forEach((cell,i)=>
+          cell.setProperty(hmUI.prop.SRC,glyph(row.mode,name,chars[i])));
+        set(row.date,text,weekday === 0 || weekday === 6 ? 'weekend' : 'digital');
+        set(row.time,hhmm,'digital');
       }
     };
     this.stop = () => {

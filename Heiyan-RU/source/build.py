@@ -35,7 +35,7 @@ ImageDraw.Draw(km).text((15,10),' км',font=font(16),anchor='mm',fill='#ebedf0'
 put('km',km)
 put('aod_km',dim(km))
 for name, size, symbols in [('value',23,'0123456789%'),('small',18,'0123456789°−,.'),
-                            ('current',28,'0123456789°−'),('steps',28,'0123456789')]:
+                            ('digital',35,'0123456789°−: ВСКПНДТРЧБ')]:
     for char in symbols:
         f=font(size*3)
         width=round(f.getlength(char)/3)
@@ -43,6 +43,12 @@ for name, size, symbols in [('value',23,'0123456789%'),('small',18,'0123456789°
         ImageDraw.Draw(glyph).text((width*1.5,(size+3)*1.5),char,font=f,
                                    fill='#ebedf0',anchor='mm')
         glyph = glyph.resize((width,size+3),Image.Resampling.LANCZOS)
+        if name == 'digital':
+            glyph = glyph.resize((22,38),Image.Resampling.LANCZOS)
+            weekend = Image.new('RGBA',glyph.size,'#ed4f52')
+            weekend.putalpha(glyph.getchannel('A'))
+            put(f'weekend_{ord(char)}',weekend)
+            put(f'aod_weekend_{ord(char)}',dim(weekend))
         put(f'{name}_{ord(char)}',glyph)
         put(f'aod_{name}_{ord(char)}',dim(glyph))
 for i in range(3,32):
@@ -73,9 +79,13 @@ for i in (64,65):
 preview = background.copy()
 d = ImageDraw.Draw(preview)
 for x,y,label,size in [(135,141,'72',23),(350,141,'100',23),(135,324,'540',23),(347,324,'28',23),
-                       (240,109,'−10°',28),(210,148,'−18°',18),(240,148,'/',18),(270,148,'−12°',18),(122,244,'12 птн',30),
-                       (361,244,'10:09',35),(240,356,'1196',28),(240,391,'0,50 км',18)]:
+                       (210,148,'−18°',18),(240,148,'/',18),(270,148,'−12°',18),
+                       (240,391,'0,50 км',18)]:
     d.text((x,y),label,font=font(size),fill='#ebedf0',anchor='mm')
+for center,y,text in [(240,90,'−10°'),(123,225,'12 ПТН'),(361,225,'10:09'),(240,337,'1196')]:
+    for i,char in enumerate(text):
+        preview.alpha_composite(decode(files[f'assets/digital_{ord(char)}.png']),
+                                (center-11*len(text)+22*i,y))
 preview.alpha_composite(decode(files['assets/weather_4.png']),(221,60))
 preview.alpha_composite(decode(files['assets/alarm_on.png']),(226,195))
 for index,py,px,angle in [(64,250,37,304.85),(65,247,37,58.2),(66,248,36,252)]:
@@ -85,7 +95,7 @@ for index,py,px,angle in [(64,250,37,304.85),(65,247,37,58.2),(66,248,36,252)]:
 preview.save(out/'preview.png', optimize=True)
 put('preview',preview.resize((240,240),Image.Resampling.LANCZOS))
 manifest=json.loads((root/'platform.json').read_text())
-manifest['app'].update(appId=10625861,appName='Heiyan RU',version={'code':5,'name':'1.2.2'},
+manifest['app'].update(appId=10625861,appName='Heiyan RU',version={'code':6,'name':'1.2.3'},
                        description='Русский циферблат Heiyan для Balance 2')
 manifest['i18n']={'en-US':{'appName':'Heiyan RU'},'ru-RU':{'appName':'Heiyan RU'}}
 manifest['packageInfo']['timeStamp']=int(time.time())
