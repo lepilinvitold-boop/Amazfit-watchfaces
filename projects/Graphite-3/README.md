@@ -1,4 +1,10 @@
-# Graphite 3 v1.0.16
+# Graphite 3 v1.0.17
+
+Металлический крест затемнён до графитового оттенка на обычном экране и в AOD.
+
+[Скачать ZPK](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.17-RU-Balance2.zpk) · [QR для Zepp](https://raw.githubusercontent.com/lepilinvitold-boop/Amazfit-watchfaces/main/dist/Graphite-3-v1.0.17-zepp-qr.png)
+
+## Graphite 3 v1.0.16
 
 Циферблат для Amazfit Balance 2. Оригинальный безель Heiyan и четыре торца шасси на основе нижнего. Нижний торец заходит под цифру 6. Дуги шкал укорочены, сегменты вынесены наружу относительно подписей. Прогноз использует разделитель «/» между минимумом и максимумом.
 
