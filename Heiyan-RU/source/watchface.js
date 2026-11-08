@@ -22,33 +22,34 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       }
       if (options.type !== undefined) widget('TEXT_IMG', options, mode);
     };
-    const label = (text, x, y, w, size, mode) => widget('TEXT', {
-      text, x, y, w, h: size+5, text_size: size, color: mode === idle ? 0x66686b : 0xebedf0,
+    const label = (text, x, y, w, size, mode, color = mode === idle ? 0x66686b : 0xebedf0) => widget('TEXT', {
+      text, x, y, w, h: size+5, text_size: size, color,
       align_h: hmUI.align.CENTER_H, align_v: hmUI.align.CENTER_V
     }, mode);
     const rows = [];
     const stressLabels = [];
     for (const mode of levels) {
       img(mode === active ? 'dial.png' : 'aod.png', 0, 0, mode);
-      widget('IMG_LEVEL', {x:221,y:65,w:38,h:35, image_length:29,
+      widget('IMG_LEVEL', {x:221,y:60,w:38,h:35, image_length:29,
         image_array:Array.from({length:29},(_,i)=>(mode === idle ? 'aod_' : '')+'weather_'+i+'.png'),
         type:hmUI.data_type.WEATHER_CURRENT}, mode);
-      value('WEATHER_CURRENT','current',201,99,78,mode,'°',true);
-      value('WEATHER_LOW','small',185,136,51,mode,'°',true);
-      value('WEATHER_HIGH','small',244,136,51,mode,'°',true);
-      label('/',234,135,12,15,mode);
+      value('WEATHER_CURRENT','current',201,95,78,mode,'°',true);
+      value('WEATHER_LOW','small',184,137,53,mode,'°',true);
+      value('WEATHER_HIGH','small',243,137,53,mode,'°',true);
+      label('/',234,135,12,18,mode);
       value('HEART','value',104,127,62,mode);
-      value('BATTERY','value',317,127,66,mode,'%');
+      value('BATTERY','value',317,127,66,mode);
       value('CAL','value',104,310,62,mode);
       stressLabels.push(label('—',314,310,66,20,mode));
       value('STEP','value',188,342,104,mode);
-      value('DISTANCE','small',184,377,112,mode);
-      const date = label('',65,213,114,23,mode);
-      const day = label('',65,248,114,19,mode);
-      const time = label('',295,213,132,23,mode);
-      widget('IMG_STATUS',{x:321,y:250,src:'0068.png',type:hmUI.system_status.CLOCK},mode);
-      label('—:—',338,248,55,16,mode);
-      rows.push({mode,date,day,time});
+      value('DISTANCE','small',184,380,112,mode);
+      const date = label('',59,228,126,26,mode);
+      const redDate = label('',59,228,126,26,mode,mode === idle ? 0x652628 : 0xed4f52);
+      const time = label('',295,226,132,30,mode);
+      const prefix = mode === idle ? 'aod_' : '';
+      img(prefix+'alarm.png',230,185,mode);
+      widget('IMG_STATUS',{x:230,y:185,src:prefix+'alarm_on.png',type:hmUI.system_status.CLOCK},mode);
+      rows.push({date,redDate,time});
       for (const [part,src,px,py] of [['hour','0064',37,250],['minute','0065',37,247]]) {
         widget('TIME_POINTER',{
           [part+'_path']:(mode === idle ? 'aod_'+Number(src) : src)+'.png',
@@ -85,12 +86,16 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       if (second === lastSecond) return;
       lastSecond = second;
       const now = new Date(stamp);
-      const week = ['ВСК','ПНД','ВТР','СРД','ЧТВ','ПТН','СБТ'];
+      const week = ['вск','пнд','втр','срд','чтв','птн','сбт'];
       const hhmm = pad(clock?.hour ?? now.getHours())+':'+pad(clock?.minute ?? now.getMinutes());
+      const weekday = (clock?.week ?? now.getDay()) % 7;
       for (const row of rows) {
-        row.date.setProperty(hmUI.prop.TEXT,pad(clock?.day ?? now.getDate())+'.'+pad(clock?.month ?? now.getMonth()+1));
-        row.day.setProperty(hmUI.prop.TEXT,week[(clock?.week ?? now.getDay()) % 7]);
-        row.time.setProperty(hmUI.prop.TEXT,hhmm+(row.mode === active ? ':'+pad(clock?.second ?? now.getSeconds()) : ''));
+        const weekend = weekday === 0 || weekday === 6;
+        const text = (clock?.day ?? now.getDate())+' '+week[weekday];
+        row.date.setProperty(hmUI.prop.VISIBLE,!weekend);
+        row.redDate.setProperty(hmUI.prop.VISIBLE,weekend);
+        (weekend ? row.redDate : row.date).setProperty(hmUI.prop.TEXT,text);
+        row.time.setProperty(hmUI.prop.TEXT,hhmm);
       }
     };
     this.stop = () => {
@@ -116,8 +121,8 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       [311,96,78,65,'Settings_batteryManagerScreen'], [94,305,78,70,null,'CAL'],
       [310,305,78,70,'StressHomeScreen'], [174,307,132,69,null,'STEP'],
       [182,377,116,44,null,'DISTANCE'], [53,204,138,69,'ScheduleCalScreen'],
-      [300,211,39,31,'AlarmInfoScreen'], [339,211,43,31,'StopWatchScreen'],
-      [382,211,41,31,'CountdownAppScreen'], [303,243,109,33,'AlarmInfoScreen']
+      [303,221,58,47,'StopWatchScreen'], [361,221,59,47,'CountdownAppScreen'],
+      [223,179,34,34,'AlarmInfoScreen']
     ]) {
       const bounds = {x,y,w,h,enable:true};
       const hit = metric
