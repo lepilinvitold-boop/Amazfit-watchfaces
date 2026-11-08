@@ -1,12 +1,21 @@
+try { (() => {
 const moduleSlot = __$$hmAppManager$$__.currentApp.current;
 moduleSlot.module = DeviceRuntimeCore.WatchFace({
   init_view() {
     if (this.built) return;
     this.built = true;
     const active = hmUI.show_level.ONLY_NORMAL;
-    const idle = hmUI.show_level.ONLY_AOD ?? hmUI.show_level.ONAL_AOD;
-    const widget = (kind, options, mode) =>
-      hmUI.createWidget(hmUI.widget[kind], {...options, show_level: mode});
+    const idle = hmUI.show_level.ONAL_AOD || hmUI.show_level.ONLY_AOD;
+    const widget = (kind, options, mode) => {
+      try {
+        return hmUI.createWidget(hmUI.widget[kind], Object.assign({}, options, {show_level: mode}));
+      } catch (error) {
+        console.log('Heiyan widget '+kind,error);
+        return {setProperty(){},setEnable(){}};
+      }
+    };
+    widget('IMG',{src:'dial.png',x:0,y:0,w:480,h:480},active);
+    widget('IMG',{src:'aod.png',x:0,y:0,w:480,h:480},idle);
     const levels = [active, idle];
     const glyph = (mode, name, char) => (mode === idle ? 'aod_' : '') + name + '_' + char.charCodeAt(0) + '.png';
     const img = (src, x, y, mode) => widget('IMG', {src, x, y}, mode);
@@ -29,7 +38,6 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
     const rows = [];
     const stressLabels = [];
     for (const mode of levels) {
-      img(mode === active ? 'dial.png' : 'aod.png', 0, 0, mode);
       widget('IMG_LEVEL', {x:221,y:60,w:38,h:35, image_length:29,
         image_array:Array.from({length:29},(_,i)=>(mode === idle ? 'aod_' : '')+'weather_'+i+'.png'),
         type:hmUI.data_type.WEATHER_CURRENT}, mode);
@@ -87,11 +95,11 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       lastSecond = second;
       const now = new Date(stamp);
       const week = ['вск','пнд','втр','срд','чтв','птн','сбт'];
-      const hhmm = pad(clock?.hour ?? now.getHours())+':'+pad(clock?.minute ?? now.getMinutes());
-      const weekday = (clock?.week ?? now.getDay()) % 7;
+      const hhmm = pad(clock ? clock.hour : now.getHours())+':'+pad(clock ? clock.minute : now.getMinutes());
+      const weekday = (clock ? clock.week : now.getDay()) % 7;
       for (const row of rows) {
         const weekend = weekday === 0 || weekday === 6;
-        const text = (clock?.day ?? now.getDate())+' '+week[weekday];
+        const text = (clock ? clock.day : now.getDate())+' '+week[weekday];
         row.date.setProperty(hmUI.prop.VISIBLE,!weekend);
         row.redDate.setProperty(hmUI.prop.VISIBLE,weekend);
         (weekend ? row.redDate : row.date).setProperty(hmUI.prop.TEXT,text);
@@ -108,11 +116,11 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       update();
       if (smooth) this.tick = timer.createTimer(50,50,update,{});
     };
-    if (clock) {
+    if (clock && typeof clock.addEventListener === "function") {
       this.clock = clock;
       this.event = clock.event ? clock.event.MINUTEEND : hmSensor.event.MINUTEEND;
       this.refresh = update;
-      clock.addEventListener(this.event,update);
+      try { clock.addEventListener(this.event,update); } catch (error) { console.log("Heiyan clock",error); }
     }
     widget('WIDGET_DELEGATE',{resume_call:resume,pause_call:this.stop},active);
     resume();
@@ -132,6 +140,7 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
       hit.setEnable(true);
     }
   },
+  onInit() { this.init_view(); },
   build() { this.init_view(); },
   onDestroy() {
     if (this.stop) this.stop();
@@ -139,3 +148,5 @@ moduleSlot.module = DeviceRuntimeCore.WatchFace({
     if (this.clock) this.clock.removeEventListener(this.event,this.refresh);
   }
 });
+
+})(); } catch (error) { console.log("Heiyan module",error); }

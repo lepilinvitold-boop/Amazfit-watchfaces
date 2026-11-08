@@ -84,7 +84,7 @@ for index,py,px,angle in [(64,250,37,304.85),(65,247,37,58.2),(66,248,36,252)]:
 preview.save(out/'preview.png', optimize=True)
 put('preview',preview.resize((240,240),Image.Resampling.LANCZOS))
 manifest=json.loads((root/'platform.json').read_text())
-manifest['app'].update(appId=10625861,appName='Heiyan RU',version={'code':3,'name':'1.2.0'},
+manifest['app'].update(appId=10625861,appName='Heiyan RU',version={'code':4,'name':'1.2.1'},
                        description='Русский циферблат Heiyan для Balance 2')
 manifest['i18n']={'en-US':{'appName':'Heiyan RU'},'ru-RU':{'appName':'Heiyan RU'}}
 manifest['packageInfo']['timeStamp']=int(time.time())
