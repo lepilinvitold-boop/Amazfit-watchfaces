@@ -20,8 +20,8 @@
 
 ## Skmei 2
 
-Skmei 2 v1.0.17 для Amazfit Balance 2.
+Skmei 2 v1.0.18 для Amazfit Balance 2.
 
-- [QR для Zepp](dist/Skmei-2-1.0.17-zepp-qr.png)
-- [ZPK](dist/Skmei-2-1.0.17-Balance2.zpk)
-- [Превью](dist/Skmei-2-1.0.17-preview.png)
+- [QR для Zepp](dist/Skmei-2-1.0.18-zepp-qr.png)
+- [ZPK](dist/Skmei-2-1.0.18-Balance2.zpk)
+- [Превью](dist/Skmei-2-1.0.18-preview.png)
